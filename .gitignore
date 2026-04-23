@@ -1,0 +1,44 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode / iOS
+*.xcuserstate
+*.xccheckout
+xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CDK
+infrastructure/cdk.out/
+infrastructure/node_modules/
+infrastructure/*.js
+infrastructure/*.d.ts
+infrastructure/lib/**/*.js
+infrastructure/lib/**/*.d.ts
+infrastructure/bin/**/*.js
+infrastructure/bin/**/*.d.ts
+
+# Python / Lambda vendored deps (see backend/.gitignore)
+__pycache__/
+*.pyc
+*.pyo
+
+# Secrets / env
+.env
+.env.*
+amplifyconfiguration.json
+awsconfiguration.json

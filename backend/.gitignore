@@ -1,0 +1,29 @@
+# Vendored Lambda dependencies (installed via: pip3 install -r requirements.txt -t .)
+# These are bundled into the Lambda zip by CDK — do not commit.
+annotated_types/
+anyio/
+bin/
+certifi/
+dateutil/
+distro/
+h11/
+httpcore/
+httpx/
+idna/
+jiter/
+openai/
+pydantic/
+pydantic_core/
+sniffio/
+tqdm/
+typing_inspection/
+*.dist-info/
+*.egg-info/
+typing_extensions.py
+six.py
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ApiBaseURL</key>
+	<string>https://d8mpxcbo0h.execute-api.ap-south-1.amazonaws.com/prod</string>
+	<key>UserPoolId</key>
+	<string>ap-south-1_pE1xEch0q</string>
+	<key>UserPoolClientId</key>
+	<string>6q7jt1rnp6l3b4de42adekhqcm</string>
+	<key>Region</key>
+	<string>ap-south-1</string>
+</dict>
+</plist>
