@@ -642,7 +642,8 @@ struct WorkoutDayRemoteDetailView: View {
                         heroCard
                         if day.warmup != nil || day.mainSet != nil || day.cooldown != nil || day.exercises != nil {
                             structuredWorkoutSection
-                        } else {
+                        } else if day.coachMessage == nil {
+                            // Only show fallback when there is no coach message (avoids duplicate text)
                             instructionsFallbackCard
                         }
                         if let msg = day.coachMessage {
@@ -880,14 +881,15 @@ struct WorkoutDayRemoteDetailView: View {
     }
 
     private func coachMessageCard(_ msg: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "brain.head.profile.fill").font(.system(size: 18)).foregroundStyle(TFTheme.accentOrange)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Coach Goggins").font(.system(.caption, design: .rounded, weight: .bold)).foregroundStyle(TFTheme.accentOrange)
-                Text(msg).font(.system(.subheadline, design: .rounded)).foregroundStyle(TFTheme.textPrimary).lineSpacing(3)
-            }
+        VStack(alignment: .leading, spacing: 4) {
+            sectionHeader(icon: "brain.head.profile.fill", title: "Coach Goggins",
+                          color: TFTheme.accentOrange, pace: nil, hrZone: nil)
+            Text(msg)
+                .font(.system(.subheadline, design: .rounded))
+                .foregroundStyle(TFTheme.textPrimary)
+                .padding(.horizontal, 18).padding(.bottom, 12)
         }
-        .padding(18).glassCard()
+        .glassCard()
     }
 
     // MARK: - Buttons
