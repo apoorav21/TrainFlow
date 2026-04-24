@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrainFlow — Technical Project Report</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #161b27;
+    --bg3: #1e2535;
+    --accent: #f97316;
+    --accent2: #3b82f6;
+    --accent3: #22d3ee;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --purple: #a855f7;
+    --text: #f0f4ff;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --border: rgba(255,255,255,0.08);
+    --code-bg: #0a0d14;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  /* Cover */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0f1117 0%, #1a1f2e 50%, #0f1117 100%);
+    text-align: center;
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+  }
+  .cover-logo {
+    margin-bottom: 24px;
+    filter: drop-shadow(0 0 40px rgba(249,115,22,0.4));
+  }
+  .cover-logo img {
+    width: 100px;
+    height: 100px;
+    border-radius: 22px;
+    display: block;
+  }
+  .cover h1 {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, #f97316, #fb923c, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 16px;
+  }
+  .cover-sub {
+    font-size: 22px;
+    color: var(--text2);
+    max-width: 600px;
+    margin-bottom: 40px;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .cover-meta-item {
+    text-align: center;
+  }
+  .cover-meta-item .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+  .cover-meta-item .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  /* Layout */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 60px 40px;
+  }
+  /* TOC */
+  .toc {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 60px;
+  }
+  .toc h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .toc ol {
+    list-style: none;
+    counter-reset: toc;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 40px;
+  }
+  .toc ol li {
+    counter-increment: toc;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text2);
+  }
+  .toc ol li::before {
+    content: counter(toc, decimal-leading-zero);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 24px;
+  }
+  .toc ol li a {
+    color: var(--text2);
+    text-decoration: none;
+  }
+  .toc ol li a:hover { color: var(--text); }
+  /* Sections */
+  .section {
+    margin-bottom: 80px;
+  }
+  h2.section-title {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  h2.section-title .num {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(249,115,22,0.1);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(to right, var(--accent), transparent);
+    margin-bottom: 32px;
+    opacity: 0.4;
+  }
+  h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 36px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h3::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text2);
+    margin: 24px 0 10px;
+  }
+  p {
+    color: var(--text2);
+    margin-bottom: 14px;
+  }
+  /* Cards */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .info-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .info-card .ic-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+  .info-card .ic-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .info-card .ic-body {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  /* Tech stack badges */
+  .tech-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid transparent;
+  }
+  .badge-orange { background: rgba(249,115,22,0.12); color: #fb923c; border-color: rgba(249,115,22,0.2); }
+  .badge-blue { background: rgba(59,130,246,0.12); color: #60a5fa; border-color: rgba(59,130,246,0.2); }
+  .badge-cyan { background: rgba(34,211,238,0.12); color: #22d3ee; border-color: rgba(34,211,238,0.2); }
+  .badge-green { background: rgba(34,197,94,0.12); color: #4ade80; border-color: rgba(34,197,94,0.2); }
+  .badge-purple { background: rgba(168,85,247,0.12); color: #c084fc; border-color: rgba(168,85,247,0.2); }
+  .badge-yellow { background: rgba(234,179,8,0.12); color: #fbbf24; border-color: rgba(234,179,8,0.2); }
+  .badge-red { background: rgba(239,68,68,0.12); color: #f87171; border-color: rgba(239,68,68,0.2); }
+  /* Code blocks */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    overflow-x: auto;
+    margin: 16px 0 24px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12.5px;
+    background: rgba(255,255,255,0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fb923c;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: #e2e8f0;
+  }
+  .kw { color: #c084fc; }
+  .fn { color: #60a5fa; }
+  .str { color: #4ade80; }
+  .cm { color: #475569; }
+  .num { color: #fbbf24; }
+  .type { color: #22d3ee; }
+  /* Diagram */
+  .diagram {
+    background: var(--code-bg);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 12px;
+    padding: 28px 32px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #94a3b8;
+    overflow-x: auto;
+    margin: 16px 0 28px;
+  }
+  .diagram .d-title { color: #f97316; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+  .diagram .d-node { color: #60a5fa; }
+  .diagram .d-arrow { color: #475569; }
+  .diagram .d-label { color: #fbbf24; }
+  .diagram .d-green { color: #4ade80; }
+  .diagram .d-purple { color: #c084fc; }
+  .diagram .d-red { color: #f87171; }
+  .diagram .d-cyan { color: #22d3ee; }
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 28px;
+    font-size: 13.5px;
+  }
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--bg3);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  /* Screenshot placeholder */
+  .screenshot-placeholder {
+    background: var(--bg3);
+    border: 2px dashed rgba(249,115,22,0.3);
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    margin: 24px 0;
+  }
+  .screenshot-placeholder .sp-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+  .screenshot-placeholder .sp-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .screenshot-placeholder .sp-desc {
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .screenshot-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 20px 0 32px;
+  }
+  .screenshot-row .screenshot-placeholder {
+    padding: 36px 16px;
+  }
+  /* Real screenshot display */
+  .phone-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 20px;
+    margin: 24px 0 40px;
+    align-items: start;
+  }
+  .phone-row-2 { grid-template-columns: repeat(2, 1fr); max-width: 480px; }
+  .phone-row-3 { grid-template-columns: repeat(3, 1fr); }
+  .phone-row-4 { grid-template-columns: repeat(4, 1fr); }
+  .phone-item {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+  .phone-item img {
+    width: 100%;
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.09);
+    display: block;
+    background: #000;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  .watch-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin: 24px 0 40px;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+  .watch-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+  .watch-item img {
+    width: 120px;
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.1);
+    display: block;
+    background: #000;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+  }
+  .img-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+    text-align: center;
+    max-width: 150px;
+  }
+  /* Lists */
+  ul, ol {
+    padding-left: 20px;
+    color: var(--text2);
+    margin-bottom: 16px;
+  }
+  li {
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  li strong { color: var(--text); }
+  /* Callout */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: rgba(249,115,22,0.06);
+    border-radius: 0 10px 10px 0;
+    padding: 16px 20px;
+    margin: 16px 0 24px;
+    font-size: 14px;
+    color: var(--text2);
+  }
+  .callout-blue { border-color: var(--accent2); background: rgba(59,130,246,0.06); }
+  .callout-green { border-color: var(--green); background: rgba(34,197,94,0.06); }
+  .callout-purple { border-color: var(--purple); background: rgba(168,85,247,0.06); }
+  /* Flow steps */
+  .flow-step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .flow-step .step-num {
+    min-width: 28px; height: 28px;
+    background: rgba(249,115,22,0.15);
+    color: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    margin-top: 2px;
+  }
+  .flow-step .step-body { font-size: 14px; color: var(--text2); }
+  .flow-step .step-body strong { color: var(--text); }
+  /* ─── Print / PDF ─────────────────────────────────────────────────── */
+  @media print {
+    /* Force background colours and images to render */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 14mm 12mm 16mm 12mm;
+    }
+
+    /* Cover: one page, then hard break before TOC */
+    .cover {
+      min-height: 0;
+      height: 100vh;
+      page-break-after: always;
+      break-after: page;
+    }
+
+    /* TOC: keep together; break to next page after it */
+    .toc {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      page-break-after: always;
+      break-after: page;
+    }
+
+    /* Sections: let them flow across pages freely,
+       but start a new page before each major section */
+    .section {
+      page-break-before: auto;
+      break-before: auto;
+      page-break-inside: auto;
+      break-inside: auto;
+    }
+
+    /* Never split a heading from the content that follows it */
+    h2.section-title,
+    h3,
+    h4 {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+
+    /* Keep individual cards whole */
+    .card,
+    .info-card,
+    .callout,
+    .flow-step,
+    .diagram,
+    .badge {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Code blocks — keep together */
+    pre {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      white-space: pre-wrap;
+      overflow-x: visible;
+    }
+
+    /* Tables: avoid row orphans; keep entire table if it fits on a page */
+    table {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Screenshot grids: keep entire row together */
+    .phone-row,
+    .watch-row,
+    .screenshot-row,
+    .card-grid,
+    .tech-grid {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Individual screenshot items */
+    .phone-item,
+    .watch-item {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Images must never overflow the page */
+    img {
+      max-width: 100%;
+      max-height: 80vh;
+      height: auto;
+    }
+
+    /* Container padding tighter in print */
+    .container {
+      padding: 20px 0;
+      max-width: 100%;
+    }
+
+    /* Links: show URL in parentheses (skip internal # anchors) */
+    a[href]:not([href^="#"])::after {
+      content: none;   /* suppress — repo URL already visible in text */
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ COVER ═══ -->
+<div class="cover">
+  <div class="cover-logo"><img src="TrainFlow/TrainFlow/Assets.xcassets/AppIcon.appiconset/AppIcon.png" alt="TrainFlow Logo"></div>
+  <h1>TrainFlow</h1>
+  <p class="cover-sub">AI-Powered Fitness Coaching — Complete Technical Project Report</p>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><div class="label">Platform</div><div class="value">iOS 17+ / watchOS</div></div>
+    <div class="cover-meta-item"><div class="label">Backend</div><div class="value">AWS Serverless</div></div>
+    <div class="cover-meta-item"><div class="label">AI Engine</div><div class="value">OpenAI GPT-5</div></div>
+    <div class="cover-meta-item"><div class="label">Author</div><div class="value">Apoorav Rao</div></div>
+    <div class="cover-meta-item"><div class="label">Date</div><div class="value">April 2026</div></div>
+    <div class="cover-meta-item"><div class="label">Repository</div><div class="value"><a href="https://github.com/apoorav21/TrainFlow" target="_blank" style="color:inherit;text-decoration:none;">github.com/apoorav21/TrainFlow</a></div></div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════ TOC ════ -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#s1">Executive Summary</a></li>
+    <li><a href="#s2">Technology Stack</a></li>
+    <li><a href="#s3">System Architecture</a></li>
+    <li><a href="#s4">Authentication System</a></li>
+    <li><a href="#s5">iOS Application — Feature Deep Dive</a></li>
+    <li><a href="#s6">AI Coaching Engine</a></li>
+    <li><a href="#s7">Health Data Integration</a></li>
+    <li><a href="#s8">Training Plan System</a></li>
+    <li><a href="#s9">Workout Tracking</a></li>
+    <li><a href="#s10">Progress & Analytics</a></li>
+    <li><a href="#s11">Apple Watch Companion App</a></li>
+    <li><a href="#s12">Backend API Reference</a></li>
+    <li><a href="#s13">Database Design</a></li>
+    <li><a href="#s14">Infrastructure (AWS CDK)</a></li>
+    <li><a href="#s15">Security Architecture</a></li>
+    <li><a href="#s16">User Benefits & Use Cases</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S1 ═════ -->
+<div class="section" id="s1">
+  <h2 class="section-title"><span class="num">01</span> Executive Summary</h2>
+  <div class="section-divider"></div>
+
+  <p>TrainFlow is a full-stack, production-grade iOS fitness coaching application that combines real-time HealthKit biometrics, an AI coach powered by OpenAI GPT-5, a personalised training plan system, and a native Apple Watch companion — all backed by a fully serverless AWS infrastructure deployed via Infrastructure-as-Code.</p>
+
+  <p>Unlike generic fitness trackers, TrainFlow acts as a true digital coach: it reads 20+ health metrics directly from Apple's HealthKit, understands the user's race goals and injury history, and generates multi-week structured training plans tailored specifically to each athlete. Users can then have a continuous conversation with the AI coach — asking questions, requesting plan adjustments, logging workouts verbally, and receiving weekly performance summaries — all in plain English.</p>
+
+  <div class="card-grid">
+    <div class="info-card">
+      <div class="ic-icon">🤖</div>
+      <div class="ic-title">Agentic AI Coach</div>
+      <div class="ic-body">GPT-5 with 8 function-calling tools. The AI reads your health data, modifies your plan, and logs workouts — all through a natural language conversation.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">❤️</div>
+      <div class="ic-title">Deep HealthKit Integration</div>
+      <div class="ic-body">20+ metrics including HRV, VO₂ max, sleep stages, resting HR, body composition, and more — synced automatically and surfaced intelligently.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">📅</div>
+      <div class="ic-title">AI Training Plans</div>
+      <div class="ic-body">Full multi-week plans with phase-based periodisation, daily workout prescriptions, warmup/cooldown protocols, and automatic adaptation.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">⌚</div>
+      <div class="ic-title">Watch Companion</div>
+      <div class="ic-body">Live workout execution on Apple Watch with real-time heart rate, duration, and calories — synced back to the phone via WatchConnectivity.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">☁️</div>
+      <div class="ic-title">Serverless Backend</div>
+      <div class="ic-body">24 AWS Lambda functions, 6 DynamoDB tables, Cognito auth, and API Gateway — deployed as a single CDK stack to ap-south-1.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">🔐</div>
+      <div class="ic-title">Passwordless Auth</div>
+      <div class="ic-body">Full email OTP custom auth flow via Cognito Lambda triggers and AWS SES, alongside traditional email/password and password reset.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S2 ═════ -->
+<div class="section" id="s2">
+  <h2 class="section-title"><span class="num">02</span> Technology Stack</h2>
+  <div class="section-divider"></div>
+
+  <h3>Frontend — iOS &amp; watchOS</h3>
+  <div class="tech-grid">
+    <span class="badge badge-blue">SwiftUI (iOS 17+)</span>
+    <span class="badge badge-blue">Swift 5.9</span>
+    <span class="badge badge-red">HealthKit</span>
+    <span class="badge badge-purple">WatchKit / watchOS 10</span>
+    <span class="badge badge-purple">WatchConnectivity</span>
+    <span class="badge badge-orange">Amplify iOS SDK</span>
+    <span class="badge badge-cyan">Swift Charts</span>
+    <span class="badge badge-green">Combine / async-await</span>
+  </div>
+
+  <h3>Backend — Serverless Python</h3>
+  <div class="tech-grid">
+    <span class="badge badge-yellow">Python 3.12</span>
+    <span class="badge badge-yellow">AWS Lambda</span>
+    <span class="badge badge-yellow">AWS API Gateway (REST)</span>
+    <span class="badge badge-yellow">AWS DynamoDB</span>
+    <span class="badge badge-yellow">AWS Cognito</span>
+    <span class="badge badge-yellow">AWS SES</span>
+    <span class="badge badge-yellow">AWS Secrets Manager</span>
+    <span class="badge badge-green">OpenAI Python SDK</span>
+  </div>
+
+  <h3>Infrastructure</h3>
+  <div class="tech-grid">
+    <span class="badge badge-orange">AWS CDK (TypeScript)</span>
+    <span class="badge badge-orange">CloudFormation</span>
+    <span class="badge badge-orange">IAM</span>
+    <span class="badge badge-orange">CloudWatch Logs</span>
+    <span class="badge badge-blue">Node.js 18 (CDK runtime)</span>
+  </div>
+
+  <h3>AI &amp; Machine Learning</h3>
+  <div class="tech-grid">
+    <span class="badge badge-green">OpenAI GPT-5 (primary)</span>
+    <span class="badge badge-green">OpenAI GPT-5-mini (summarisation)</span>
+    <span class="badge badge-green">Function Calling API</span>
+    <span class="badge badge-green">Streaming / Agentic loops</span>
+  </div>
+
+  <h3>Version Control &amp; DevOps</h3>
+  <div class="tech-grid">
+    <span class="badge badge-purple">Git / GitHub</span>
+    <span class="badge badge-purple">XcodeGen (project.yml)</span>
+    <span class="badge badge-cyan">pip (Python deps vendored into Lambda)</span>
+  </div>
+
+  <table>
+    <thead><tr><th>Layer</th><th>Technology</th><th>Version / Notes</th></tr></thead>
+    <tbody>
+      <tr><td>iOS App</td><td>SwiftUI + Swift</td><td>iOS 17+, Swift 5.9</td></tr>
+      <tr><td>Watch App</td><td>WatchKit + SwiftUI</td><td>watchOS 10+</td></tr>
+      <tr><td>Auth</td><td>AWS Cognito + Amplify iOS</td><td>User Pool: ap-south-1_pE1xEch0q</td></tr>
+      <tr><td>API</td><td>API Gateway REST + Lambda</td><td>Cognito authoriser on all routes</td></tr>
+      <tr><td>Database</td><td>DynamoDB</td><td>6 tables, on-demand billing</td></tr>
+      <tr><td>AI</td><td>OpenAI GPT-5</td><td>Function calling, up to 5 tool-call rounds</td></tr>
+      <tr><td>Email OTP</td><td>AWS SES</td><td>Sender: raoapoorav@gmail.com (verified)</td></tr>
+      <tr><td>Secrets</td><td>AWS Secrets Manager</td><td>trainflow/openai-api-key</td></tr>
+      <tr><td>IaC</td><td>AWS CDK TypeScript</td><td>Single stack: TrainFlowStack, ap-south-1</td></tr>
+      <tr><td>Lambda runtime</td><td>Python 3.12</td><td>24 functions, 128–512 MB, 15–900s timeout</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S3 ═════ -->
+<div class="section" id="s3">
+  <h2 class="section-title"><span class="num">03</span> System Architecture</h2>
+  <div class="section-divider"></div>
+
+  <h3>High-Level Architecture Overview</h3>
+  <img src="dfd images/Technical Architecture.png" alt="TrainFlow Full System Architecture" style="width:100%; border-radius:12px; border:1px solid rgba(255,255,255,0.08); margin:16px 0 28px; display:block;">
+
+  <h3>Request Lifecycle</h3>
+  <div class="flow-step"><div class="step-num">1</div><div class="step-body"><strong>Authentication:</strong> iOS app calls Amplify.Auth — tokens stored securely in Keychain. Every API call attaches the Cognito ID token as <code>Authorization: Bearer &lt;token&gt;</code>.</div></div>
+  <div class="flow-step"><div class="step-num">2</div><div class="step-body"><strong>API Gateway:</strong> REST API validates the JWT against the Cognito User Pool. On success it forwards the request to the Lambda with <code>requestContext.authorizer.claims.sub</code> — the Cognito user ID.</div></div>
+  <div class="flow-step"><div class="step-num">3</div><div class="step-body"><strong>Lambda Handler:</strong> Each function calls <code>trainflow.shared.auth.extract_user_id(event)</code> to get the user ID, validates the request body, and performs DynamoDB operations.</div></div>
+  <div class="flow-step"><div class="step-num">4</div><div class="step-body"><strong>DynamoDB:</strong> All reads/writes go through <code>trainflow.shared.db</code> which handles <code>Decimal</code> ↔ <code>float</code> conversion and standard response formatting.</div></div>
+  <div class="flow-step"><div class="step-num">5</div><div class="step-body"><strong>Response:</strong> Lambda returns a standard JSON envelope; <code>trainflow.shared.response</code> builds the CORS-enabled HTTP response.</div></div>
+
+  <h3>AI Chat Request Lifecycle</h3>
+  <img src="dfd images/ai_chat_message_data_flow_flowchart_for_ai_chat_request_lifecycle._dark.png" alt="AI Chat Message Data Flow" style="width:100%; border-radius:12px; border:1px solid rgba(255,255,255,0.08); margin:16px 0 28px; display:block;">
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S4 ═════ -->
+<div class="section" id="s4">
+  <h2 class="section-title"><span class="num">04</span> Authentication System</h2>
+  <div class="section-divider"></div>
+
+  <p>TrainFlow implements a comprehensive authentication system built on AWS Cognito and the Amplify iOS SDK. It supports three distinct authentication flows, a password reset flow, and auto-session restoration at app launch.</p>
+
+  <h3>Authentication Flows</h3>
+
+  <h4>1. Email / Password (Standard SRP)</h4>
+  <p>The default flow uses Cognito's Secure Remote Password protocol. On sign-up, users provide their name, email, and password. After registration, Cognito triggers the <code>tf-profile-init</code> Lambda via a post-confirmation hook to create the DynamoDB user record.</p>
+
+  <h4>2. Passwordless Email OTP (Custom Auth)</h4>
+  <p>A fully custom auth flow implemented via three Cognito Lambda triggers:</p>
+  <div class="card-grid">
+    <div class="info-card">
+      <div class="ic-title">DefineAuthChallenge</div>
+      <div class="ic-body">Controls the state machine. On first call, issues CUSTOM_CHALLENGE. On correct answer, issues tokens.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-title">CreateAuthChallenge</div>
+      <div class="ic-body">Generates a 6-digit OTP, stores it in privateChallengeParameters, and sends it via AWS SES email.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-title">VerifyAuthChallenge</div>
+      <div class="ic-body">Compares the user-submitted code against the stored answer, setting answerCorrect accordingly.</div>
+    </div>
+  </div>
+
+  <pre><span class="cm"># tf-auth-create-challenge Lambda</span>
+<span class="kw">import</span> boto3, random
+
+<span class="kw">def</span> <span class="fn">handler</span>(event, context):
+    otp = <span class="str">f"{random.randint(0, 999999):06d}"</span>
+    event[<span class="str">"response"</span>][<span class="str">"publicChallengeParameters"</span>] = {<span class="str">"type"</span>: <span class="str">"OTP"</span>}
+    event[<span class="str">"response"</span>][<span class="str">"privateChallengeParameters"</span>] = {<span class="str">"answer"</span>: otp}
+    event[<span class="str">"response"</span>][<span class="str">"challengeMetadata"</span>] = <span class="str">"TRAINFLOW_OTP"</span>
+
+    boto3.client(<span class="str">"ses"</span>, region_name=<span class="str">"ap-south-1"</span>).send_email(
+        Source=os.environ[<span class="str">"FROM_EMAIL"</span>],
+        Destination={<span class="str">"ToAddresses"</span>: [event[<span class="str">"request"</span>][<span class="str">"userAttributes"</span>][<span class="str">"email"</span>]]},
+        Message={
+            <span class="str">"Subject"</span>: {<span class="str">"Data"</span>: <span class="str">"Your TrainFlow sign-in code"</span>},
+            <span class="str">"Body"</span>: {<span class="str">"Text"</span>: {<span class="str">"Data"</span>: <span class="str">f"Your code is: {otp}\n\nExpires in 3 minutes."</span>}},
+        },
+    )
+    <span class="kw">return</span> event</pre>
+
+  <h4>3. Forgot Password (3-Step Verified Reset)</h4>
+  <p>A structured three-step flow in the iOS login screen:</p>
+  <div class="flow-step"><div class="step-num">1</div><div class="step-body"><strong>Email entry</strong> — user enters email, app calls <code>Amplify.Auth.resetPassword(for: email)</code>, Cognito sends OTP via email.</div></div>
+  <div class="flow-step"><div class="step-num">2</div><div class="step-body"><strong>OTP verification</strong> — user enters the 6-digit code. Code is stored locally; no API call yet.</div></div>
+  <div class="flow-step"><div class="step-num">3</div><div class="step-body"><strong>New password + requirements checklist</strong> — user sets a new password with a live requirements view (length, uppercase, lowercase, digit). Calls <code>confirmResetPassword</code> then auto-signs in.</div></div>
+
+  <h3>Session Management</h3>
+  <p>At app launch, <code>AuthService.configureAmplify()</code> calls <code>checkCurrentSession()</code> which fetches the active session from Amplify's Keychain cache. Amplify automatically refreshes expired tokens using the Refresh Token. A background task subscribes to <code>Amplify.Hub.publisher(for: .auth)</code> to react to sign-in, sign-out, and session expiry events in real time.</p>
+
+  <h3>Error Handling</h3>
+  <p>All Amplify errors are mapped through <code>friendlyMessage(_:)</code> — converting cryptic AWS error codes into user-readable messages:</p>
+  <pre><span class="cm">// Swift — AuthService.swift</span>
+<span class="kw">private func</span> <span class="fn">friendlyMessage</span>(_ raw: <span class="type">String</span>) -> <span class="type">String</span> {
+    <span class="kw">let</span> s = raw.lowercased()
+    <span class="kw">if</span> s.contains(<span class="str">"incorrect username or password"</span>) { <span class="kw">return</span> <span class="str">"Wrong email or password."</span> }
+    <span class="kw">if</span> s.contains(<span class="str">"limitexceededexception"</span>) { <span class="kw">return</span> <span class="str">"Too many attempts. Wait a few minutes."</span> }
+    <span class="kw">if</span> s.contains(<span class="str">"codemismatchexception"</span>) { <span class="kw">return</span> <span class="str">"Incorrect code. Please try again."</span> }
+    <span class="kw">if</span> s.contains(<span class="str">"expiredcodeexception"</span>) { <span class="kw">return</span> <span class="str">"Code expired. Request a new one."</span> }
+    <span class="kw">if</span> s.contains(<span class="str">"network"</span>) { <span class="kw">return</span> <span class="str">"Connection issue. Check your internet."</span> }
+    <span class="kw">return</span> <span class="str">"Something went wrong. Please try again."</span>
+}</pre>
+
+  <div class="phone-row phone-row-4">
+    <div class="phone-item">
+      <img src="screenshots/Sign In Screen.png" alt="Sign In Screen">
+      <span class="img-label">Sign In</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/Sign Up Screen.png" alt="Sign Up Screen">
+      <span class="img-label">Sign Up</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/Passwordless Login.png" alt="Passwordless OTP">
+      <span class="img-label">Passwordless OTP</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/Forgot Password.png" alt="Forgot Password">
+      <span class="img-label">Forgot Password</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S5 ═════ -->
+<div class="section" id="s5">
+  <h2 class="section-title"><span class="num">05</span> iOS Application — Feature Deep Dive</h2>
+  <div class="section-divider"></div>
+
+  <p>The iOS app is built entirely in SwiftUI targeting iOS 17+. It uses a tab-based navigation architecture with five main screens: Today, Training, Health, Progress, and AI Coach. All views use a consistent dark design system defined in <code>TFTheme</code>.</p>
+
+  <h3>App Entry &amp; Navigation</h3>
+  <p>On launch, <code>SplashView</code> handles two states: checking existing session (<code>isCheckingSession = true</code>) and presenting auth (<code>isSignedIn = false</code>). Once authenticated, the main <code>ContentView</code> renders a <code>TabView</code> with bottom navigation.</p>
+
+  <pre><span class="cm">// ContentView — tab structure</span>
+<span class="type">TabView</span>(selection: $selectedTab) {
+    <span class="type">TodayView</span>()
+        .tabItem { <span class="type">Label</span>(<span class="str">"Today"</span>, systemImage: <span class="str">"house.fill"</span>) }.tag(<span class="num">0</span>)
+    <span class="type">DynamicTrainingView</span>()
+        .tabItem { <span class="type">Label</span>(<span class="str">"Training"</span>, systemImage: <span class="str">"calendar"</span>) }.tag(<span class="num">1</span>)
+    <span class="type">HealthView</span>()
+        .tabItem { <span class="type">Label</span>(<span class="str">"Health"</span>, systemImage: <span class="str">"heart.fill"</span>) }.tag(<span class="num">2</span>)
+    <span class="type">TrainingProgressView</span>()
+        .tabItem { <span class="type">Label</span>(<span class="str">"Progress"</span>, systemImage: <span class="str">"chart.line.uptrend.xyaxis"</span>) }.tag(<span class="num">3</span>)
+    <span class="type">AICoachView</span>()
+        .tabItem { <span class="type">Label</span>(<span class="str">"Coach"</span>, systemImage: <span class="str">"brain.head.profile"</span>) }.tag(<span class="num">4</span>)
+}</pre>
+
+  <h3>Today Screen</h3>
+  <p>The Today screen is the user's daily command centre. It shows:</p>
+  <ul>
+    <li><strong>Personalised greeting</strong> — time-aware ("Good morning/afternoon/evening, [FirstName]")</li>
+    <li><strong>Today's workout card</strong> — pulls from the active training plan. Shows workout type icon, title, target duration/distance, phase badge, and completion status. Tapping opens the full workout detail sheet.</li>
+    <li><strong>Rest day card</strong> — shown on scheduled rest days with recovery messaging.</li>
+    <li><strong>This Week section</strong> — scrollable list of all workout days for the current training week. Each row shows completion status (checkmark/X/empty circle), workout type, and scheduled date.</li>
+    <li><strong>Vital stats row</strong> — inline health metric chips (resting HR, HRV, steps, sleep).</li>
+    <li><strong>Settings gear</strong> — top-right button opens the Settings sheet.</li>
+  </ul>
+
+  <div class="phone-row phone-row-2">
+    <div class="phone-item">
+      <img src="screenshots/Today No Plan.png" alt="Today — No Plan">
+      <span class="img-label">No Active Plan</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/Training Week view.png" alt="Training Week View">
+      <span class="img-label">Active Plan — Week View</span>
+    </div>
+  </div>
+
+  <h3>UX Design Principles</h3>
+  <p>TrainFlow's interface is built around a set of deliberate design decisions that prioritise clarity, speed, and coaching intent over decoration.</p>
+
+  <div class="card-grid">
+    <div class="info-card">
+      <div class="ic-icon">🌑</div>
+      <div class="ic-title">Unified Dark Design System</div>
+      <div class="ic-body"><code>TFTheme</code> defines every colour, radius, and semantic token app-wide. Glass cards (<code>.glassCard()</code>) use translucent fills with subtle borders — keeping the focus on data, not chrome.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">💬</div>
+      <div class="ic-title">Conversational Onboarding</div>
+      <div class="ic-body">No sign-up form asking for 10 fields upfront. The AI Coach gathers information through natural conversation — asking one question at a time and saving answers incrementally as the user types.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">📍</div>
+      <div class="ic-title">Today as the Home Screen</div>
+      <div class="ic-body">The most common daily action — seeing today's workout — is exactly one tap away. No navigation required. The Today tab opens directly to the current day's prescription.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">🎨</div>
+      <div class="ic-title">Colour-Coded Workout Types</div>
+      <div class="ic-body">Each workout type has a canonical colour used consistently across the calendar grid, activity feed, and Watch app: interval=red, tempo=yellow, long=orange, strength=purple, easy=green, rest=cyan.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">📉</div>
+      <div class="ic-title">Progressive Disclosure</div>
+      <div class="ic-body">The training week grid shows a compact overview; tapping a day expands to the full detail sheet (warmup → main set → cooldown → coach message). Users see as much or as little as they need.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">🔔</div>
+      <div class="ic-title">Contextual Deep Links</div>
+      <div class="ic-body">Any screen can fire a <code>NotificationCenter</code> event to open the AI Coach with a pre-filled message — e.g., tapping "Ask Coach" on a workout day opens chat with that workout already referenced.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">⚡</div>
+      <div class="ic-title">Optimistic UI &amp; Caching</div>
+      <div class="ic-body">Workout completion updates immediately in the UI before the API call completes. Health AI summaries are cached by date so the Overall tab loads instantly on repeat visits.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">🛡️</div>
+      <div class="ic-title">Graceful Error States</div>
+      <div class="ic-body">Every network call has a clear loading indicator, a retry path, and a human-readable error message. Auth errors are mapped through <code>friendlyMessage()</code> so users never see raw AWS error codes.</div>
+    </div>
+  </div>
+
+  <h3>Settings Screen</h3>
+  <p>Accessible via the gear icon on the Today tab. Features:</p>
+  <ul>
+    <li><strong>Profile card</strong> — avatar with initials, display name, email</li>
+    <li><strong>Edit Display Name</strong> — updates both Cognito user attribute and DynamoDB profile simultaneously</li>
+    <li><strong>Dark/Light mode toggle</strong> — persisted in <code>@AppStorage("appColorScheme")</code></li>
+    <li><strong>HealthKit status indicator</strong></li>
+    <li><strong>Sign Out</strong> — with confirmation dialog</li>
+    <li><strong>Delete Account</strong> — calls <code>/account</code> DELETE then <code>Amplify.Auth.deleteUser()</code>; fully wipes all data</li>
+    <li><strong>App version footer</strong></li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S6 ═════ -->
+<div class="section" id="s6">
+  <h2 class="section-title"><span class="num">06</span> AI Coaching Engine</h2>
+  <div class="section-divider"></div>
+
+  <p>The AI coaching system is TrainFlow's most sophisticated component. It uses OpenAI GPT-5 with function calling to create an agentic coach that can read real data, modify training plans, and maintain a long-term conversation with the user.</p>
+
+  <h3>AI Coach View (iOS)</h3>
+  <p>The <code>AICoachView</code> has two states managed by a single <code>@State var showChat: Bool</code>:</p>
+  <ul>
+    <li><strong>Home (Briefing) state</strong> — shown when no conversation exists. Displays today's health briefing, plan status, and quick-prompt chips.</li>
+    <li><strong>Chat state</strong> — full conversation interface with message bubbles, a persistent input bar, and typing indicator.</li>
+  </ul>
+
+  <p>When the user taps a quick prompt chip or types a message, it posts to <code>tf-chat-message</code> via <code>APIClient.shared.post("/chat/message", body: ...)</code> and appends the AI response to the local message list.</p>
+
+  <div class="callout callout-purple">
+    The AI Coach View listens to <code>NotificationCenter</code> for <code>.openAICoachWithMessage</code> notifications — other screens (e.g., the Today workout card) can deep-link into the AI chat with a pre-filled message. This enables contextual coaching flows, e.g., "My knee hurts, should I still do today's long run?"
+  </div>
+
+  <h3>The 8 AI Tools (Function Calling)</h3>
+  <table>
+    <thead><tr><th>Tool Name</th><th>Description</th><th>DynamoDB Tables</th></tr></thead>
+    <tbody>
+      <tr><td><code>get_user_profile</code></td><td>Returns full profile: name, goals, race info, fitness level, injuries, location, onboarding status</td><td>tf-users</td></tr>
+      <tr><td><code>get_active_plan</code></td><td>Returns active plan metadata: name, goal type, start/end dates, current week</td><td>tf-training-plans</td></tr>
+      <tr><td><code>get_week_workouts</code></td><td>Returns all workout days for a specified week including warmup, main sets, cooldown, coach message</td><td>tf-workout-days</td></tr>
+      <tr><td><code>get_health_data</code></td><td>Returns HealthKit metrics for last N days: resting HR, HRV, VO₂ max, sleep, steps, weight</td><td>tf-health</td></tr>
+      <tr><td><code>get_workout_history</code></td><td>Returns logged workouts + HealthKit-synced workouts for last N days with effort ratings and notes</td><td>tf-workouts</td></tr>
+      <tr><td><code>update_user_profile</code></td><td>Updates any profile field — used during conversational onboarding to save answers incrementally</td><td>tf-users</td></tr>
+      <tr><td><code>create_training_plan</code></td><td>Triggers the full plan generation pipeline: invokes <code>tf-plan-generate</code> Lambda asynchronously</td><td>tf-training-plans, tf-workout-days</td></tr>
+      <tr><td><code>adapt_training_plan</code></td><td>Modifies specific workout days in the active plan: change distance, intensity, swap workouts</td><td>tf-workout-days</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Agentic Loop</h3>
+  <pre><span class="cm"># chat_handler.py — simplified agentic loop</span>
+<span class="kw">def</span> <span class="fn">handle_chat</span>(user_id, user_message, context):
+    history = load_chat_history(user_id)      <span class="cm"># from DynamoDB</span>
+
+    <span class="cm"># Auto-summarise if history is long</span>
+    <span class="kw">if</span> len(history) > <span class="num">20</span>:
+        summary = summarise_history(history[:-<span class="num">10</span>])   <span class="cm"># GPT-5-mini</span>
+        history = [summary_record] + history[-<span class="num">10</span>:]
+
+    messages = build_messages(context, history, user_message)
+
+    <span class="cm"># Agentic loop — up to 5 tool-call rounds</span>
+    <span class="kw">for</span> _ <span class="kw">in</span> range(<span class="num">5</span>):
+        response = openai.chat.completions.create(
+            model=<span class="str">"gpt-5"</span>,
+            messages=messages,
+            tools=<span class="type">TOOLS</span>,
+        )
+        message = response.choices[<span class="num">0</span>].message
+
+        <span class="kw">if not</span> message.tool_calls:
+            <span class="kw">break</span>                               <span class="cm"># Final answer ready</span>
+
+        <span class="cm"># Execute all tool calls, append results</span>
+        <span class="kw">for</span> call <span class="kw">in</span> message.tool_calls:
+            result = execute_tool(user_id, call.function.name,
+                                  json.loads(call.function.arguments))
+            messages.append({<span class="str">"role"</span>: <span class="str">"tool"</span>, <span class="str">"content"</span>: str(result), ...})
+
+    save_to_chat_history(user_id, user_message, message.content)
+    <span class="kw">return</span> message.content</pre>
+
+  <h3>Context Pre-loading</h3>
+  <p>Before every AI call, <code>context_builder.py</code> pre-fetches a rich snapshot of the user's state so the AI can answer questions without burning tool-call rounds on basic data fetches:</p>
+  <ul>
+    <li>User profile (goals, fitness level, injuries, race target)</li>
+    <li>Active training plan metadata and current week</li>
+    <li>Last 7 days of health metrics (HRV, resting HR, sleep score, steps)</li>
+    <li>Last 14 days of workouts (both logged and HealthKit-synced)</li>
+  </ul>
+
+  <h3>Conversation Memory &amp; Summarisation</h3>
+  <p>Every message (user + assistant) is stored in the <code>tf-chat</code> DynamoDB table. When the history exceeds 20 messages, the oldest 10+ messages are sent to GPT-5-mini for compression into a single summary record. This keeps the context window efficient while preserving long-term memory of the user's coaching journey.</p>
+
+  <h3>System Prompt</h3>
+  <p>The system prompt (built by <code>prompts.py</code>) injects the full user context snapshot and establishes the AI's coaching persona: a knowledgeable, supportive endurance coach that speaks plainly, gives specific actionable advice, and never makes up data it hasn't fetched via tools.</p>
+
+  <div class="phone-row phone-row-2">
+    <div class="phone-item">
+      <img src="screenshots/AI coach Home Briefing.png" alt="AI Coach — Briefing Home">
+      <span class="img-label">Coach Home — Daily Briefing</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/Ai coach Plan generation.png" alt="AI Coach — Plan Generation">
+      <span class="img-label">Conversational Plan Creation</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S7 ═════ -->
+<div class="section" id="s7">
+  <h2 class="section-title"><span class="num">07</span> Health Data Integration</h2>
+  <div class="section-divider"></div>
+
+  <p>TrainFlow has one of the deepest HealthKit integrations of any fitness app. The <code>HealthKitManager</code> singleton fetches 20+ distinct metrics in parallel using <code>async let</code> concurrency, then syncs a daily snapshot to the AWS backend for the AI coach to reference.</p>
+
+  <h3>20+ HealthKit Metrics</h3>
+  <table>
+    <thead><tr><th>Category</th><th>Metrics</th></tr></thead>
+    <tbody>
+      <tr><td>Heart</td><td>Resting heart rate, HRV (SDNN), VO₂ max, walking heart rate average</td></tr>
+      <tr><td>Sleep</td><td>Total sleep duration, sleep efficiency, REM minutes, deep sleep minutes, core (light) sleep minutes, awake time — broken down per night</td></tr>
+      <tr><td>Activity</td><td>Step count (daily), active energy burned (kcal), exercise minutes, stand hours, flights climbed</td></tr>
+      <tr><td>Body</td><td>Body weight, BMI, body fat percentage, lean body mass</td></tr>
+      <tr><td>Respiratory</td><td>Respiratory rate, blood oxygen saturation (SpO₂)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Parallel Fetching</h3>
+  <pre><span class="cm">// HealthKitManager.swift — parallel fetch</span>
+<span class="kw">func</span> <span class="fn">fetchAll</span>() <span class="kw">async</span> {
+    <span class="kw">async let</span> heartData = fetchHeartMetrics()
+    <span class="kw">async let</span> sleepData = fetchSleepData()
+    <span class="kw">async let</span> activityData = fetchActivityMetrics()
+    <span class="kw">async let</span> bodyData = fetchBodyComposition()
+    <span class="kw">async let</span> respiratoryData = fetchRespiratoryMetrics()
+
+    <span class="kw">let</span> (h, s, a, b, r) = <span class="kw">await</span> (heartData, sleepData, activityData, bodyData, respiratoryData)
+    <span class="type">await</span> <span class="type">MainActor</span>.run {
+        self.heart = h; self.sleepNights = s
+        self.activity = a; self.body = b; self.respiratory = r
+    }
+}</pre>
+
+  <h3>Health View — Four Tabs</h3>
+  <div class="card-grid">
+    <div class="info-card">
+      <div class="ic-title">Overall Tab</div>
+      <div class="ic-body">AI-generated health summary card, readiness score, top insights. Loads from <code>HealthSummaryViewModel</code> which calls <code>/health/ai-summary</code>.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-title">Vitals Tab</div>
+      <div class="ic-body">Resting HR trend, HRV trend, VO₂ max, respiratory rate, SpO₂ — all with sparkline charts and colour-coded status indicators.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-title">Sleep Tab</div>
+      <div class="ic-body">Per-night breakdown with sleep stage bars (REM/Deep/Core/Awake). 7-night duration trend chart. Sleep efficiency score.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-title">Activity Tab</div>
+      <div class="ic-body">Step count bar chart, active energy ring, exercise minutes, stand hours, flights climbed. 7-day and 30-day views.</div>
+    </div>
+  </div>
+
+  <h3>AI Health Summary</h3>
+  <p>The <code>tf-health-ai-summary</code> Lambda calls GPT-5-mini with the last 7 days of health metrics to generate a plain-English summary that's surfaced in the Health → Overall tab. The summary highlights trends, flags potential overtraining signals (e.g., HRV drop + elevated resting HR), and suggests recovery actions.</p>
+
+  <h3>Backend Health Sync</h3>
+  <p>The <code>tf-health-sync</code> Lambda (POST <code>/health</code>) accepts a daily snapshot payload from the iOS app and upserts it into the <code>tf-health</code> DynamoDB table with a sort key of <code>HEALTH#{YYYY-MM-DD}</code>. This allows the AI coach to query historical health trends when building training recommendations.</p>
+
+  <div class="phone-row phone-row-4">
+    <div class="phone-item">
+      <img src="screenshots/Health Overall Tab.png" alt="Health — Overall Tab">
+      <span class="img-label">Overall — AI Summary</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/Health Vitals tab.png" alt="Health — Vitals Tab">
+      <span class="img-label">Vitals — HR &amp; HRV</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/Health Sleep tab.png" alt="Health — Sleep Tab">
+      <span class="img-label">Sleep — Stage Breakdown</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/Health Activity Tab.png" alt="Health — Activity Tab">
+      <span class="img-label">Activity — Steps &amp; Energy</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S8 ═════ -->
+<div class="section" id="s8">
+  <h2 class="section-title"><span class="num">08</span> Training Plan System</h2>
+  <div class="section-divider"></div>
+
+  <p>The training plan system is the core of TrainFlow. Plans are AI-generated multi-week structured schedules, stored at two levels: the plan header (metadata) and individual workout days (one DynamoDB item per day).</p>
+
+  <h3>Plan Generation Pipeline</h3>
+  <img src="dfd images/update_the_training_plan_generation_pipeline_diagram._in_the_bottom_right.png" alt="Training Plan Generation Pipeline" style="width:100%; border-radius:12px; border:1px solid rgba(255,255,255,0.08); margin:16px 0 28px; display:block;">
+
+  <h3>Workout Day Structure</h3>
+  <p>Each workout day stored in DynamoDB contains rich prescription data:</p>
+  <pre><span class="cm"># Example workout day object</span>
+{
+  <span class="str">"userId"</span>: <span class="str">"cognito-sub-uuid"</span>,
+  <span class="str">"planWeekDay"</span>: <span class="str">"plan-uuid#W03#D2"</span>,
+  <span class="str">"week"</span>: <span class="num">3</span>,
+  <span class="str">"day"</span>: <span class="num">2</span>,
+  <span class="str">"type"</span>: <span class="str">"run"</span>,
+  <span class="str">"dayType"</span>: <span class="str">"tempo"</span>,
+  <span class="str">"title"</span>: <span class="str">"Tempo Run"</span>,
+  <span class="str">"phase"</span>: <span class="str">"Build"</span>,
+  <span class="str">"targetDuration"</span>: <span class="str">"45 min"</span>,
+  <span class="str">"targetDistance"</span>: <span class="str">"8 km"</span>,
+  <span class="str">"scheduledDate"</span>: <span class="str">"2026-04-28"</span>,
+  <span class="str">"warmup"</span>: <span class="str">"10 min easy jog + 4x strides"</span>,
+  <span class="str">"mainWorkout"</span>: <span class="str">"25 min at tempo effort (RPE 7-8)"</span>,
+  <span class="str">"cooldown"</span>: <span class="str">"10 min easy + stretching"</span>,
+  <span class="str">"instructions"</span>: <span class="str">"Aim for 5:10-5:20/km. Breathe through your nose."</span>,
+  <span class="str">"coachMessage"</span>: <span class="str">"This is your key workout this week. Execute!"</span>,
+  <span class="str">"isCompleted"</span>: <span class="kw">false</span>,
+  <span class="str">"isRestDay"</span>: <span class="kw">false</span>
+}</pre>
+
+  <h3>Dynamic Training View</h3>
+  <p>The <code>DynamicTrainingView</code> is the main training interface, showing:</p>
+  <ul>
+    <li><strong>Plan header card</strong> — plan name, goal type, week X of Y, progress bar</li>
+    <li><strong>Week selector</strong> — horizontal scrollable week chips showing completion rate per week</li>
+    <li><strong>Weekly calendar grid</strong> — Mon–Sun grid with workout type icons and completion indicators</li>
+    <li><strong>Activity feed</strong> — recently logged workouts (both TrainFlow and HealthKit) with deduplication</li>
+    <li><strong>Workout day detail sheet</strong> — full prescription with warmup/main/cooldown, "Mark Complete" button</li>
+    <li><strong>Workout log modal</strong> — log actual performance: distance, duration, effort rating (1–10), free-text notes</li>
+  </ul>
+
+  <h3>Workout Deduplication</h3>
+  <p>When the same workout appears in both TrainFlow logs and HealthKit (e.g., user ran via Apple Workout app), the app intelligently deduplicates:</p>
+  <pre><span class="cm">// DynamicTrainingView.swift — deduplication logic</span>
+<span class="kw">func</span> <span class="fn">deduplicateActivity</span>() {
+    <span class="kw">var</span> remove = <span class="type">Set</span>&lt;<span class="type">String</span>&gt;()
+    <span class="kw">for</span> t <span class="kw">in</span> trainFlowActivities {
+        <span class="kw">for</span> h <span class="kw">in</span> healthKitActivities {
+            <span class="kw">let</span> overlap = abs(t.date.timeIntervalSince(h.date)) &lt; <span class="num">3600</span>
+            <span class="kw">guard</span> overlap, typeMatches(t.type, h.type) <span class="kw">else</span> { <span class="kw">continue</span> }
+            <span class="cm">// Prefer TrainFlow record if it has effortRating (user logged detail)</span>
+            <span class="kw">if</span> t.effortRating != <span class="kw">nil</span> { remove.insert(h.id) }
+            <span class="kw">else</span>                    { remove.insert(t.id) }
+        }
+    }
+    activities = (trainFlowActivities + healthKitActivities)
+        .filter { !remove.contains($0.id) }
+}</pre>
+
+  <div class="phone-row phone-row-4">
+    <div class="phone-item">
+      <img src="screenshots/Training Week view.png" alt="Training — Week View">
+      <span class="img-label">Weekly Calendar Grid</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/workout detail view.png" alt="Workout Day Detail">
+      <span class="img-label">Workout Day Detail</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/workout log.png" alt="Workout Log">
+      <span class="img-label">Log Workout</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/Ai coach Plan generation.png" alt="Plan Creation Chat">
+      <span class="img-label">Plan Creation Chat</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S9 ═════ -->
+<div class="section" id="s9">
+  <h2 class="section-title"><span class="num">09</span> Workout Tracking</h2>
+  <div class="section-divider"></div>
+
+  <p>TrainFlow tracks workouts through two complementary channels: manual logging through the app UI, and automatic syncing from HealthKit/Apple Workout app. Both sources are unified in the activity feed with intelligent deduplication.</p>
+
+  <h3>Manual Workout Logging</h3>
+  <p>The <code>WorkoutLogView</code> modal allows users to record:</p>
+  <ul>
+    <li>Actual distance completed (km)</li>
+    <li>Actual duration (minutes)</li>
+    <li>Effort rating on a 1–10 scale (subjective RPE)</li>
+    <li>Free-text notes ("felt strong", "knee ached at km 7")</li>
+    <li>Association to a planned workout day</li>
+  </ul>
+  <p>The <code>tf-workout-log</code> Lambda stores this to the <code>tf-workouts</code> table with sort key <code>{ISO-timestamp}#{UUID}</code> and also calls <code>tf-plan-update-day</code> to mark the planned day as completed.</p>
+
+  <h3>HealthKit Workout Sync</h3>
+  <p>The <code>tf-workout-healthkit-sync</code> Lambda and its iOS counterpart in <code>TrainingService.swift</code> automatically sync workouts recorded by Apple Workout, Strava (if shared to Health), or any HealthKit-compatible app. Synced workouts carry:</p>
+  <ul>
+    <li>Workout type (running, cycling, swimming, HIIT, strength training, etc.)</li>
+    <li>Distance in km</li>
+    <li>Duration in minutes</li>
+    <li>Active calories burned</li>
+    <li>Source app name</li>
+    <li>A <code>source: "healthkit"</code> flag for display differentiation</li>
+  </ul>
+
+  <h3>Workout Report (AI-Generated)</h3>
+  <p>The <code>tf-workout-report</code> Lambda generates an AI-powered analysis of a completed workout. Given the workout data and the user's profile/plan, GPT-5 produces a brief coaching report: pacing analysis, effort assessment, recovery recommendations, and whether the session met the training stimulus goal.</p>
+
+  <h3>Workout History Screen</h3>
+  <p>The activity feed in <code>DynamicTrainingView</code> shows a unified, deduplicated list of recent workouts. Each entry shows:</p>
+  <ul>
+    <li>Workout type icon and colour-coded label</li>
+    <li>Date, duration, distance</li>
+    <li>Effort rating (if logged via TrainFlow)</li>
+    <li>Source badge (TrainFlow vs HealthKit)</li>
+    <li>Tap to expand notes and see AI report</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S10 ════ -->
+<div class="section" id="s10">
+  <h2 class="section-title"><span class="num">10</span> Progress &amp; Analytics</h2>
+  <div class="section-divider"></div>
+
+  <p>The Progress tab provides comprehensive performance analytics across three sub-views, all built with Swift Charts and backed by real training and health data.</p>
+
+  <h3>Summary Strip</h3>
+  <p>A horizontally scrollable strip at the top of the Progress screen shows four key KPIs at a glance:</p>
+  <ul>
+    <li><strong>VO₂ Max</strong> — from HealthKit, colour-coded by fitness classification</li>
+    <li><strong>This Week</strong> — total training distance in km for the current week</li>
+    <li><strong>Streak</strong> — current consecutive training days streak</li>
+    <li><strong>All-Time PRs</strong> — count of personal records logged</li>
+  </ul>
+
+  <h3>Load Tab (Training Load Chart)</h3>
+  <p>A 12-week bar chart showing weekly training volume. Each bar represents total distance logged for a calendar week. Built from <code>weeklyLoadData</code> which groups completed workout days by ISO week start date.</p>
+
+  <h3>Records Tab (Personal Records)</h3>
+  <p>Auto-computed personal records derived from training history:</p>
+  <ul>
+    <li><strong>Longest Run</strong> — max distance single run session</li>
+    <li><strong>Best Week</strong> — highest total distance in a single week</li>
+    <li><strong>Workouts Done</strong> — total completed session count</li>
+    <li><strong>Total Distance</strong> — sum of all training distance across all plans</li>
+  </ul>
+
+  <h3>Streaks Tab (Activity Heatmap)</h3>
+  <p>A GitHub-style 16-week activity heatmap showing training consistency. Cells are coloured (orange intensity) for days with completed workouts. Below the heatmap: current streak, longest streak, total sessions, total distance — all computed in real time from <code>trainingVM.workoutDays</code>.</p>
+
+  <pre><span class="cm">// ProgressView.swift — streak computation</span>
+<span class="kw">private var</span> currentStreak: <span class="type">Int</span> {
+    <span class="kw">let</span> sorted = trainingVM.workoutDays
+        .filter { $0.isCompleted }
+        .compactMap { DateFormatter().date(from: $0.scheduledDate) }
+        .sorted(by: >)
+    <span class="kw">var</span> streak = <span class="num">0</span>
+    <span class="kw">var</span> check = Calendar.current.startOfDay(<span class="kw">for</span>: Date())
+    <span class="kw">for</span> d <span class="kw">in</span> sorted {
+        <span class="kw">if</span> Calendar.current.isDate(d, inSameDayAs: check) ||
+           Calendar.current.isDate(d, inSameDayAs: check.dayBefore) {
+            streak += <span class="num">1</span>
+            check = Calendar.current.startOfDay(<span class="kw">for</span>: d)
+        } <span class="kw">else</span> { <span class="kw">break</span> }
+    }
+    <span class="kw">return</span> streak
+}</pre>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S11 ════ -->
+<div class="section" id="s11">
+  <h2 class="section-title"><span class="num">11</span> Apple Watch Companion App</h2>
+  <div class="section-divider"></div>
+
+  <p>TrainFlow includes a native Apple Watch companion app built with WatchKit and SwiftUI. The watch app enables athletes to execute workouts with real-time metrics directly on their wrist — no phone needed during a run.</p>
+
+  <h3>Watch App Architecture</h3>
+  <img src="dfd images/watch_iphone_communication_diagram_for_watch_iphone_watchconnectivity_flow..png" alt="Watch iPhone WatchConnectivity Flow" style="width:100%; border-radius:12px; border:1px solid rgba(255,255,255,0.08); margin:16px 0 28px; display:block;">
+
+  <h3>Watch Screens</h3>
+  <div class="card-grid">
+    <div class="info-card">
+      <div class="ic-title">ContentView (Today's Workout)</div>
+      <div class="ic-body">Displays today's scheduled workout received from the phone. Shows workout title, type, and target. "Start Workout" button launches the active session.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-title">TodayWorkoutView</div>
+      <div class="ic-body">Detailed workout preview on the watch, showing warmup, main workout, and cooldown instructions. Scrollable list format optimised for the small display.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-title">ActiveWorkoutView</div>
+      <div class="ic-body">Live workout execution screen with real-time heart rate, elapsed duration, active calories, and distance. Pause/Resume/End controls. Haptic feedback on pause and end.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-title">WorkoutSummaryView</div>
+      <div class="ic-body">Post-workout summary showing total duration, distance, calories, and average HR. Haptic success feedback on completion. "Done" button dismisses and sends data to iPhone.</div>
+    </div>
+  </div>
+
+  <h3>WatchWorkoutManager</h3>
+  <p>The <code>WatchWorkoutManager</code> is an <code>ObservableObject</code> that manages the full workout session lifecycle using HealthKit's <code>HKWorkoutSession</code> and <code>HKLiveWorkoutBuilder</code>:</p>
+  <pre><span class="cm">// WatchWorkoutManager.swift</span>
+<span class="kw">func</span> <span class="fn">startWorkout</span>(workoutType: <span class="type">HKWorkoutActivityType</span>) {
+    <span class="kw">let</span> config = <span class="type">HKWorkoutConfiguration</span>()
+    config.activityType = workoutType
+    config.locationType = .outdoor
+
+    session = <span class="kw">try</span>? <span class="type">HKWorkoutSession</span>(healthStore: healthStore, configuration: config)
+    builder = session?.associatedWorkoutBuilder()
+    builder?.dataSource = <span class="type">HKLiveWorkoutDataSource</span>(healthStore: healthStore,
+                                                  workoutConfiguration: config)
+    session?.delegate = <span class="kw">self</span>
+    builder?.delegate = <span class="kw">self</span>
+    session?.startActivity(with: <span class="type">Date</span>())
+    builder?.beginCollection(withStart: <span class="type">Date</span>()) { _, _ <span class="kw">in</span> }
+}</pre>
+
+  <div class="watch-row">
+    <div class="watch-item">
+      <img src="screenshots/watch rest day.png" alt="Watch — Rest Day">
+      <span class="img-label">Rest Day</span>
+    </div>
+    <div class="watch-item">
+      <img src="screenshots/watch during workout view.PNG" alt="Watch — Active Workout">
+      <span class="img-label">Live Session</span>
+    </div>
+    <div class="watch-item">
+      <img src="screenshots/watch heart rate view during workout.PNG" alt="Watch — Heart Rate">
+      <span class="img-label">Heart Rate View</span>
+    </div>
+    <div class="watch-item">
+      <img src="screenshots/watch phase during workout.PNG" alt="Watch — Workout Phase">
+      <span class="img-label">Phase Guidance</span>
+    </div>
+    <div class="watch-item">
+      <img src="screenshots/watch end workout.PNG" alt="Watch — End Workout">
+      <span class="img-label">End Workout</span>
+    </div>
+    <div class="watch-item">
+      <img src="screenshots/watch effort logging.PNG" alt="Watch — Effort Rating">
+      <span class="img-label">Effort Logging</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S12 ════ -->
+<div class="section" id="s12">
+  <h2 class="section-title"><span class="num">12</span> Backend API Reference</h2>
+  <div class="section-divider"></div>
+
+  <p>All API routes require a valid Cognito JWT in the <code>Authorization: Bearer</code> header. The user ID is extracted from the Cognito claims — clients never send their user ID directly.</p>
+
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>Lambda</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td>/profile</td><td>tf-profile-get</td><td>Fetch user profile and onboarding status</td></tr>
+      <tr><td>PUT</td><td>/profile</td><td>tf-profile-update</td><td>Update profile fields (name, goals, race info, injuries)</td></tr>
+      <tr><td>POST</td><td>/health</td><td>tf-health-sync</td><td>Sync daily HealthKit snapshot from iOS</td></tr>
+      <tr><td>GET</td><td>/health</td><td>tf-health-get</td><td>Fetch health history (last N days)</td></tr>
+      <tr><td>GET</td><td>/health/ai-summary</td><td>tf-health-ai-summary</td><td>AI-generated health trend summary</td></tr>
+      <tr><td>GET</td><td>/plans/active</td><td>tf-plan-get-active</td><td>Fetch active training plan metadata</td></tr>
+      <tr><td>GET</td><td>/plans/{planId}</td><td>tf-plan-get</td><td>Fetch specific plan by ID</td></tr>
+      <tr><td>POST</td><td>/plans</td><td>tf-plan-create</td><td>Create plan record (called before generate)</td></tr>
+      <tr><td>GET</td><td>/plans/{planId}/week/{weekNum}</td><td>tf-plan-get-week</td><td>Fetch all workout days for a week</td></tr>
+      <tr><td>PUT</td><td>/plans/{planId}/days/{dayKey}</td><td>tf-plan-update-day</td><td>Update a workout day (complete, modify)</td></tr>
+      <tr><td>POST</td><td>/plans/generate</td><td>tf-plan-generate</td><td>Generate full workout schedule (GPT-5, 900s)</td></tr>
+      <tr><td>POST</td><td>/workouts</td><td>tf-workout-log</td><td>Log a completed workout</td></tr>
+      <tr><td>GET</td><td>/workouts</td><td>tf-workout-get</td><td>Fetch workout history (last N days)</td></tr>
+      <tr><td>DELETE</td><td>/workouts/{workoutId}</td><td>tf-workout-delete</td><td>Delete a logged workout</td></tr>
+      <tr><td>GET</td><td>/workouts/{workoutId}/report</td><td>tf-workout-report</td><td>AI analysis of a specific workout</td></tr>
+      <tr><td>POST</td><td>/workouts/healthkit-sync</td><td>tf-workout-healthkit-sync</td><td>Bulk sync workouts from HealthKit</td></tr>
+      <tr><td>POST</td><td>/chat/message</td><td>tf-chat-message</td><td>Send message to AI coach (agentic, 60s)</td></tr>
+      <tr><td>GET</td><td>/chat/history</td><td>tf-chat-history</td><td>Fetch conversation history</td></tr>
+      <tr><td>DELETE</td><td>/chat</td><td>tf-chat-clear</td><td>Clear all chat history</td></tr>
+      <tr><td>DELETE</td><td>/account</td><td>tf-account-delete</td><td>Delete all user data across all tables</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Shared Backend Utilities</h3>
+  <pre><span class="cm"># trainflow/shared/auth.py</span>
+<span class="kw">def</span> <span class="fn">extract_user_id</span>(event) -> str:
+    <span class="kw">return</span> event[<span class="str">"requestContext"</span>][<span class="str">"authorizer"</span>][<span class="str">"claims"</span>][<span class="str">"sub"</span>]
+
+<span class="cm"># trainflow/shared/response.py</span>
+<span class="kw">def</span> <span class="fn">ok</span>(body) -> dict:
+    <span class="kw">return</span> {<span class="str">"statusCode"</span>: <span class="num">200</span>, <span class="str">"headers"</span>: CORS_HEADERS,
+            <span class="str">"body"</span>: json.dumps(body, default=decimal_default)}
+
+<span class="kw">def</span> <span class="fn">err</span>(status, message) -> dict:
+    <span class="kw">return</span> {<span class="str">"statusCode"</span>: status, <span class="str">"headers"</span>: CORS_HEADERS,
+            <span class="str">"body"</span>: json.dumps({<span class="str">"error"</span>: message})}</pre>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S13 ════ -->
+<div class="section" id="s13">
+  <h2 class="section-title"><span class="num">13</span> Database Design</h2>
+  <div class="section-divider"></div>
+
+  <p>TrainFlow uses a multi-table DynamoDB design with six purpose-built tables. All tables use <code>userId</code> as the partition key, ensuring all data for a user can be accessed efficiently. Tables that store multiple records per user use a composite sort key.</p>
+
+  <div class="diagram">
+    <div class="d-title">DynamoDB — Table Schema Overview</div>
+<span class="d-cyan">Table</span>               <span class="d-label">PK (userId)</span>    <span class="d-green">SK (sort key)</span>              <span class="d-purple">Key Attributes</span>
+─────────────────────────────────────────────────────────────────────
+<span class="d-cyan">tf-users</span>            <span class="d-label">userId</span>         <span class="d-arrow">(none)</span>                     name, email, goals,
+                                                               fitnessLevel, raceInfo,
+                                                               injuries, daysPerWeek,
+                                                               onboardingComplete
+
+<span class="d-cyan">tf-training-plans</span>   <span class="d-label">userId</span>         <span class="d-green">planId (UUID)</span>              planName, goalType,
+                                                               startDate, endDate,
+                                                               totalWeeks, status,
+                                                               daysPerWeek
+
+<span class="d-cyan">tf-workout-days</span>     <span class="d-label">userId</span>         <span class="d-green">{planId}#W{ww}#D{d}</span>       week, day, type, dayType,
+                                    e.g. abc#W03#D2            title, phase, instructions,
+                                                               warmup, mainWorkout,
+                                                               cooldown, targetDuration,
+                                                               targetDistance, isCompleted,
+                                                               scheduledDate
+
+<span class="d-cyan">tf-health</span>           <span class="d-label">userId</span>         <span class="d-green">HEALTH#{YYYY-MM-DD}</span>        restingHR, hrv, vo2Max,
+                                                               sleepHours, sleepScore,
+                                                               steps, weight, bodyFat,
+                                                               respiratoryRate, spo2
+
+<span class="d-cyan">tf-workouts</span>         <span class="d-label">userId</span>         <span class="d-green">{ISO-timestamp}#{UUID}</span>    type, distanceKm,
+                                                               durationMin, effortRating,
+                                                               notes, source (trainflow /
+                                                               healthkit), calories,
+                                                               sourceName, workoutType
+
+<span class="d-cyan">tf-chat</span>             <span class="d-label">userId</span>         <span class="d-green">{ISO-timestamp}#{UUID}</span>    role (user / assistant /
+                                                               summary), content,
+                                                               isSummary flag
+  </div>
+
+  <h3>Access Patterns</h3>
+  <table>
+    <thead><tr><th>Query</th><th>Table</th><th>Access Pattern</th></tr></thead>
+    <tbody>
+      <tr><td>Get user profile</td><td>tf-users</td><td>GetItem(userId)</td></tr>
+      <tr><td>Get active plan</td><td>tf-training-plans</td><td>Query(userId, filter status=active)</td></tr>
+      <tr><td>Get week workouts</td><td>tf-workout-days</td><td>Query(userId, SK begins_with "{planId}#W{ww}")</td></tr>
+      <tr><td>Get health history (7d)</td><td>tf-health</td><td>Query(userId, SK between "HEALTH#2026-04-16" and "HEALTH#2026-04-23")</td></tr>
+      <tr><td>Get recent workouts</td><td>tf-workouts</td><td>Query(userId, SK ≥ 14-days-ago ISO timestamp, ScanIndexForward=false)</td></tr>
+      <tr><td>Get chat history</td><td>tf-chat</td><td>Query(userId, Limit=50, ScanIndexForward=false)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    All DynamoDB numbers are stored as <code>Decimal</code> (DynamoDB native type). The <code>trainflow.shared.db</code> module provides a custom JSON encoder that converts <code>Decimal</code> to <code>float</code> transparently before returning API responses.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S14 ════ -->
+<div class="section" id="s14">
+  <h2 class="section-title"><span class="num">14</span> Infrastructure (AWS CDK)</h2>
+  <div class="section-divider"></div>
+
+  <p>The entire AWS infrastructure is defined as code using the AWS CDK (TypeScript). A single <code>TrainFlowStack</code> deployed to <code>ap-south-1</code> provisions all resources. The stack is composed of modular constructs.</p>
+
+  <h3>CDK Constructs</h3>
+  <table>
+    <thead><tr><th>Construct</th><th>File</th><th>Provisions</th></tr></thead>
+    <tbody>
+      <tr><td>TrainFlowTables</td><td>trainflow-tables.ts</td><td>6 DynamoDB tables with GSIs and removal policies</td></tr>
+      <tr><td>TrainFlowAuth</td><td>trainflow-auth.ts</td><td>Cognito User Pool, App Client (SRP + custom + password auth flows enabled)</td></tr>
+      <tr><td>TrainFlowLambdas</td><td>trainflow-lambdas.ts</td><td>24 Lambda functions, IAM roles, log groups (7-day retention)</td></tr>
+      <tr><td>TrainFlowApi</td><td>trainflow-api.ts</td><td>API Gateway REST API, Cognito authoriser, all route integrations</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Lambda Configuration</h3>
+  <table>
+    <thead><tr><th>Lambda Group</th><th>Timeout</th><th>Memory</th><th>Special Policies</th></tr></thead>
+    <tbody>
+      <tr><td>Standard handlers (profile, health, workouts, chat history/clear)</td><td>30s</td><td>256 MB</td><td>DynamoDB (6 tables + indexes)</td></tr>
+      <tr><td>tf-chat-message</td><td>60s</td><td>512 MB</td><td>DynamoDB + Secrets Manager + Lambda Invoke (tf-plan-generate)</td></tr>
+      <tr><td>tf-plan-generate</td><td>900s (15 min)</td><td>512 MB</td><td>DynamoDB + Secrets Manager</td></tr>
+      <tr><td>tf-workout-report, tf-health-ai-summary</td><td>30s</td><td>256 MB</td><td>DynamoDB + Secrets Manager</td></tr>
+      <tr><td>Auth triggers (3)</td><td>15s</td><td>128 MB</td><td>SES (create-challenge only)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Deployment</h3>
+  <pre><span class="cm"># Install vendored Python dependencies into backend/</span>
+pip3 install -r backend/requirements.txt -t backend/
+
+<span class="cm"># Build CDK TypeScript</span>
+cd infrastructure && npm run build
+
+<span class="cm"># Deploy to AWS ap-south-1</span>
+npm run deploy -- --require-approval never</pre>
+
+  <h3>CDK Stack Outputs</h3>
+  <ul>
+    <li><code>ApiGatewayUrl</code> — REST API base URL for iOS <code>APIClient</code></li>
+    <li><code>UserPoolId</code> — Cognito User Pool ID for Amplify configuration</li>
+    <li><code>UserPoolClientId</code> — App Client ID for Amplify configuration</li>
+  </ul>
+
+  <div class="callout callout-green">
+    Post-deployment, the three CDK outputs are manually entered into <code>TrainFlow/amplifyconfiguration.json</code> in the iOS project. The OpenAI API key is stored in AWS Secrets Manager under the path <code>trainflow/openai-api-key</code> and fetched at Lambda cold start.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S15 ════ -->
+<div class="section" id="s15">
+  <h2 class="section-title"><span class="num">15</span> Security Architecture</h2>
+  <div class="section-divider"></div>
+
+  <h3>Authentication Security</h3>
+  <ul>
+    <li><strong>JWT Tokens</strong> — Cognito ID tokens (1-hour expiry) auto-refreshed by Amplify SDK using Refresh Tokens stored securely in iOS Keychain</li>
+    <li><strong>API Gateway Authoriser</strong> — every API route requires a valid JWT; requests without a valid token receive HTTP 401</li>
+    <li><strong>User ID isolation</strong> — all backend handlers extract the user ID from Cognito claims, never from the request body. A user cannot access another user's data even by modifying the request payload.</li>
+    <li><strong>SRP (Secure Remote Password)</strong> — passwords never transmitted in plaintext; Cognito handles the SRP authentication protocol</li>
+  </ul>
+
+  <h3>Secret Management</h3>
+  <ul>
+    <li><strong>OpenAI API Key</strong> — stored in AWS Secrets Manager, fetched at Lambda cold start. Never in source code or environment variables committed to git.</li>
+    <li><strong>Amplify config</strong> — <code>amplifyconfiguration.json</code> is in <code>.gitignore</code>; contains non-secret Cognito pool IDs, not credentials</li>
+    <li><strong>No plaintext secrets in repo</strong> — comprehensive <code>.gitignore</code> excludes <code>.env</code>, <code>.env.*</code>, <code>amplifyconfiguration.json</code>, <code>awsconfiguration.json</code></li>
+  </ul>
+
+  <h3>IAM Least Privilege</h3>
+  <ul>
+    <li>Each Lambda has a dedicated execution role. DynamoDB policy grants only the 6 specific table ARNs (not wildcard <code>*</code>).</li>
+    <li>Secrets Manager policy scoped to <code>arn:aws:secretsmanager:*:*:secret:trainflow/openai-api-key*</code></li>
+    <li>SES policy granted only to the <code>tf-auth-create-challenge</code> Lambda, not shared across all functions</li>
+    <li><code>tf-plan-generate</code> can only be invoked by <code>tf-chat-message</code> via an explicit <code>grantInvoke</code> call</li>
+  </ul>
+
+  <h3>Data Privacy</h3>
+  <ul>
+    <li>HealthKit data is fetched on-device and sent to the backend only when the user has explicitly granted HealthKit permissions</li>
+    <li>The <code>DELETE /account</code> endpoint permanently deletes all data across all 6 DynamoDB tables for the user</li>
+    <li>CloudWatch log groups have 7-day retention and <code>DESTROY</code> removal policy to limit data persistence</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ S16 ════ -->
+<div class="section" id="s16">
+  <h2 class="section-title"><span class="num">16</span> User Benefits &amp; Use Cases</h2>
+  <div class="section-divider"></div>
+
+  <p>TrainFlow transforms how athletes train by connecting the dots between their biological data, their training history, and expert coaching knowledge — all in a single, coherent app.</p>
+
+  <h3>Who Benefits from TrainFlow?</h3>
+  <div class="card-grid">
+    <div class="info-card">
+      <div class="ic-icon">🏃</div>
+      <div class="ic-title">Beginner Runners</div>
+      <div class="ic-body">No need to understand training theory. Just tell the AI your goal ("I want to run my first 5K") and get a complete plan built around your fitness level and schedule.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">🏅</div>
+      <div class="ic-title">Amateur Athletes Training for Races</div>
+      <div class="ic-body">Get a periodised plan tailored to your specific race date, target time, and weekly availability. The plan includes phase-specific workouts (Base → Build → Peak → Taper).</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">💪</div>
+      <div class="ic-title">General Fitness Enthusiasts</div>
+      <div class="ic-body">Track workouts, monitor health trends, and get AI-driven insights on sleep quality and recovery — even without a race goal.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">🤕</div>
+      <div class="ic-title">Athletes Managing Injuries</div>
+      <div class="ic-body">Tell the AI about your injury and it will adapt your plan — substituting exercises, reducing intensity, or building in extra recovery. The AI remembers your injury history permanently.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">⌚</div>
+      <div class="ic-title">Apple Watch Users</div>
+      <div class="ic-body">Execute workouts directly from your wrist with live HR and calorie tracking. No phone needed during a run. Workout data syncs back automatically.</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">🔬</div>
+      <div class="ic-title">Data-Driven Athletes</div>
+      <div class="ic-body">Dig into 20+ health metrics, view training load trends, track personal records, and get AI-generated health summaries that connect sleep and recovery to performance.</div>
+    </div>
+  </div>
+
+  <h3>Key User Journeys</h3>
+
+  <h4>Journey 1: Onboarding &amp; First Plan</h4>
+  <div class="flow-step"><div class="step-num">1</div><div class="step-body">User signs up with email/password (or passwordless OTP) → Cognito triggers <code>tf-profile-init</code> to create their profile record.</div></div>
+  <div class="flow-step"><div class="step-num">2</div><div class="step-body">User opens the AI Coach tab and is greeted with a conversational onboarding sequence: "What's your main fitness goal? Tell me about your race..."</div></div>
+  <div class="flow-step"><div class="step-num">3</div><div class="step-body">The AI saves profile data incrementally via <code>update_user_profile</code> tool calls as the user answers questions.</div></div>
+  <div class="flow-step"><div class="step-num">4</div><div class="step-body">When enough information is gathered, the AI calls <code>create_training_plan</code>, triggering the 900-second plan generation Lambda.</div></div>
+  <div class="flow-step"><div class="step-num">5</div><div class="step-body">Within ~30 seconds, a fully structured multi-week plan appears in the Training tab with all workout days populated.</div></div>
+
+  <h4>Journey 2: Daily Training Loop</h4>
+  <div class="flow-step"><div class="step-num">1</div><div class="step-body">User opens the app → Today screen shows today's workout with full prescription (title, duration, distance, warmup/main/cooldown instructions).</div></div>
+  <div class="flow-step"><div class="step-num">2</div><div class="step-body">User puts on Apple Watch, glances at today's workout on the watch → taps "Start Workout" → runs with live HR and duration on wrist.</div></div>
+  <div class="flow-step"><div class="step-num">3</div><div class="step-body">After the run, the watch shows the summary → taps Done → data syncs to iPhone.</div></div>
+  <div class="flow-step"><div class="step-num">4</div><div class="step-body">User opens Training tab, taps today's workout → taps "Mark Complete" → enters effort rating (7/10), adds note "felt strong in the final km".</div></div>
+  <div class="flow-step"><div class="step-num">5</div><div class="step-body">The Health tab updates overnight with the new sleep/recovery data — the AI coach can now cross-reference yesterday's effort with last night's HRV recovery.</div></div>
+
+  <h4>Journey 3: Plan Adaptation</h4>
+  <div class="flow-step"><div class="step-num">1</div><div class="step-body">User's knee starts hurting. They open the AI Coach and type "My left knee has been aching since yesterday's tempo run."</div></div>
+  <div class="flow-step"><div class="step-num">2</div><div class="step-body">The AI fetches the current week's workouts, checks recent training load, and responds with specific advice.</div></div>
+  <div class="flow-step"><div class="step-num">3</div><div class="step-body">User: "Can you swap tomorrow's interval session for a recovery run and reduce Thursday's long run by 3km?"</div></div>
+  <div class="flow-step"><div class="step-num">4</div><div class="step-body">The AI calls <code>adapt_training_plan</code> with the specific changes → DynamoDB records are updated → Training tab reflects the new schedule instantly.</div></div>
+
+  <h4>Journey 4: Health Insight Loop</h4>
+  <div class="flow-step"><div class="step-num">1</div><div class="step-body">User opens Health → Overall tab → sees AI summary: "Your HRV has dropped 20% this week and resting HR is elevated. This signals accumulated fatigue."</div></div>
+  <div class="flow-step"><div class="step-num">2</div><div class="step-body">User opens AI Coach and asks "Why do I feel so tired despite sleeping 8 hours?"</div></div>
+  <div class="flow-step"><div class="step-num">3</div><div class="step-body">AI fetches last 7 days of health data + last 14 days of workouts and responds: "Your deep sleep has been 22% below baseline, likely due to the high training load last week. I'd recommend..."</div></div>
+
+  <h3>Competitive Advantages Over Existing Apps</h3>
+  <table>
+    <thead><tr><th>Feature</th><th>TrainFlow</th><th>Garmin Coach</th><th>Nike Run Club</th><th>Strava</th></tr></thead>
+    <tbody>
+      <tr><td>Conversational AI Coach</td><td>✅ Full GPT-5</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Real-time plan adaptation</td><td>✅ AI-driven</td><td>⚠️ Limited</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Deep HRV + sleep integration</td><td>✅ 20+ metrics</td><td>✅ Device only</td><td>❌</td><td>❌</td></tr>
+      <tr><td>AI health summaries</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Apple Watch native app</td><td>✅</td><td>✅ (Garmin only)</td><td>✅</td><td>⚠️</td></tr>
+      <tr><td>Injury-aware planning</td><td>✅ AI memory</td><td>❌</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Race-specific periodisation</td><td>✅</td><td>✅</td><td>⚠️</td><td>❌</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Usability in Practice</h3>
+  <p>TrainFlow's usability edge comes from designing every interaction around a real training workflow — not around what's easiest to build.</p>
+
+  <h4>Frictionless First Run</h4>
+  <p>New users land in the AI Coach tab and immediately start a natural conversation. There's no manual form-filling, no wizard with 12 steps, no drop-down menus for "training philosophy". The AI extracts everything it needs — race goal, fitness level, schedule, injuries — through questions that feel like talking to a real coach. Profile fields are saved automatically in the background as the user answers.</p>
+
+  <h4>Everything in Context</h4>
+  <p>The AI coach always has the user's current context — today's workout, last week's HRV trend, recent training load, injury notes — injected into every conversation. The user never needs to re-explain who they are. When they say "I'm tired today", the AI already knows their resting heart rate is up and their HRV dipped overnight.</p>
+
+  <h4>Watch Integration That Actually Works</h4>
+  <p>The Watch app shows today's exact workout prescription — not a generic countdown timer — because the phone pushes the day's data to the watch proactively on app foreground and whenever the Watch requests it. Workout phases (Warm Up → Interval 1 → Rest → Interval 2 → Cool Down) guide the athlete through each segment in real time. At the end, the effort rating is logged directly on the wrist before the user even reaches for their phone.</p>
+
+  <h4>Plan Changes Feel Instantaneous</h4>
+  <p>When a user asks the AI to swap tomorrow's tempo run for an easy recovery jog, the <code>adapt_training_plan</code> tool call updates DynamoDB in the same response turn. By the time the user closes the chat and opens the Training tab, the change is already there. There is no "syncing", no "refresh" button, no delay.</p>
+
+  <h4>Health Data That Explains Itself</h4>
+  <p>Raw numbers like "HRV: 42ms" mean nothing to most athletes. The Health tab's AI summary converts these into plain coaching language: "Your recovery metrics are trending down — 3 consecutive nights of below-average deep sleep combined with a 5-day training block suggests you're accumulating fatigue." The AI connects dots the user wouldn't see on their own.</p>
+
+  <h4>Consistent Visual Language</h4>
+  <p>Workout type colours — interval red, tempo yellow, long run orange, easy green, rest cyan — are applied identically in the training week grid, the workout detail sheet, the activity feed, and the Apple Watch screens. A user who sees an orange cell in their calendar grid instantly recognises it as a long run before reading any text.</p>
+
+  <div class="phone-row" style="grid-template-columns: repeat(3, 1fr); margin-top: 28px;">
+    <div class="phone-item">
+      <img src="screenshots/AI coach Home Briefing.png" alt="AI Coach Briefing">
+      <span class="img-label">Daily Briefing — Context-Aware Coaching</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/Health Overall Tab.png" alt="Health AI Summary">
+      <span class="img-label">AI Health Summary — Plain English</span>
+    </div>
+    <div class="phone-item">
+      <img src="screenshots/workout detail view.png" alt="Workout Detail">
+      <span class="img-label">Workout Detail — Full Prescription</span>
+    </div>
+  </div>
+
+  <!-- Final callout -->
+  <div class="callout callout-green" style="margin-top: 40px;">
+    <strong>TrainFlow represents a new generation of fitness applications</strong> — moving beyond passive data logging to active, intelligent coaching. By combining the breadth of HealthKit biometrics, the depth of AI function-calling, and the seamlessness of a native iOS + watchOS experience, TrainFlow delivers a coaching capability that was previously only available to elite athletes with human coaches, at a fraction of the cost and available 24/7.
+  </div>
+</div>
+
+<!-- Footer -->
+<div style="text-align: center; padding: 60px 0 40px; border-top: 1px solid var(--border); margin-top: 40px;">
+  <div style="margin-bottom: 12px;"><img src="TrainFlow/TrainFlow/Assets.xcassets/AppIcon.appiconset/AppIcon.png" alt="TrainFlow" style="width:48px;height:48px;border-radius:11px;"></div>
+  <div style="font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 8px;">TrainFlow</div>
+  <div style="font-size: 13px; color: var(--text3);">AI-Powered Fitness Coaching · Built by Apoorav Rao · April 2026</div>
+  <div style="font-size: 12px; color: var(--text3); margin-top: 6px;"><a href="https://github.com/apoorav21/TrainFlow" target="_blank" style="color:inherit;text-decoration:none;">github.com/apoorav21/TrainFlow</a></div>
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

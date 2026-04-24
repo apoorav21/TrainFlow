@@ -1,0 +1,286 @@
+# TrainFlow
+
+**AI-powered fitness coaching for iOS — personalised training plans, real-time health insights, and a native Apple Watch companion, all backed by a serverless AWS infrastructure.**
+
+---
+
+## Overview
+
+TrainFlow acts as a true digital coach, not just a tracker. It reads 20+ HealthKit biometrics, understands your race goals and injury history, and generates structured multi-week training plans tailored to you. You can then have a continuous conversation with the AI coach — asking questions, requesting plan adjustments, logging workouts verbally, and getting plain-English health summaries — all without leaving the app.
+
+### Key Features
+
+| Feature | Description |
+|---|---|
+| **Agentic AI Coach** | GPT-5 with 8 function-calling tools that can read your health data, modify your plan, and log workouts through natural conversation |
+| **AI Training Plans** | Multi-week periodised plans (Base → Build → Peak → Taper) generated in a single GPT-5 call, with per-day warmup/interval/cooldown prescriptions |
+| **Deep HealthKit Integration** | 20+ metrics: HRV, VO₂max, sleep stages, resting HR, body composition, SpO₂ — synced daily to the backend |
+| **Apple Watch Companion** | Live workout execution with real-time HR, phase guidance, haptic cues, and effort logging — no phone needed |
+| **Passwordless Auth** | Email OTP flow via Cognito custom Lambda triggers + AWS SES, alongside standard SRP email/password |
+| **Serverless Backend** | 24 AWS Lambda functions, 6 DynamoDB tables, API Gateway, all deployed as a single CDK stack |
+
+---
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="screenshots/Sign In Screen.png" width="160"/><br/><sub>Sign In</sub></td>
+    <td align="center"><img src="screenshots/Today No Plan.png" width="160"/><br/><sub>Today</sub></td>
+    <td align="center"><img src="screenshots/AI coach Home Briefing.png" width="160"/><br/><sub>AI Coach</sub></td>
+    <td align="center"><img src="screenshots/Training Week view.png" width="160"/><br/><sub>Training Week</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/Health Overall Tab.png" width="160"/><br/><sub>Health — AI Summary</sub></td>
+    <td align="center"><img src="screenshots/Health Vitals tab.png" width="160"/><br/><sub>Vitals</sub></td>
+    <td align="center"><img src="screenshots/workout detail view.png" width="160"/><br/><sub>Workout Detail</sub></td>
+    <td align="center"><img src="screenshots/Ai coach Plan generation.png" width="160"/><br/><sub>Plan Creation</sub></td>
+  </tr>
+</table>
+
+**Apple Watch**
+
+<table>
+  <tr>
+    <td align="center"><img src="screenshots/watch rest day.png" width="120"/><br/><sub>Rest Day</sub></td>
+    <td align="center"><img src="screenshots/watch during workout view.PNG" width="120"/><br/><sub>Live Workout</sub></td>
+    <td align="center"><img src="screenshots/watch heart rate view during workout.PNG" width="120"/><br/><sub>Heart Rate</sub></td>
+    <td align="center"><img src="screenshots/watch phase during workout.PNG" width="120"/><br/><sub>Phase Guidance</sub></td>
+    <td align="center"><img src="screenshots/watch end workout.PNG" width="120"/><br/><sub>End Workout</sub></td>
+    <td align="center"><img src="screenshots/watch effort logging.PNG" width="120"/><br/><sub>Effort Logging</sub></td>
+  </tr>
+</table>
+
+---
+
+## Architecture
+
+```
+iOS App (SwiftUI + Amplify)
+        │
+        │  HTTPS + Cognito JWT
+        ▼
+API Gateway (REST)  ─── Cognito Authoriser
+        │
+        │  Lambda proxy integration
+        ▼
+Lambda Handlers (Python 3.12)  ──  DynamoDB (6 tables)
+        │                                 │
+        │  OpenAI function calling         │
+        ▼                                 │
+  GPT-5 (chat/plans)                      │
+  GPT-5-mini (summaries)            ◄─────┘
+```
+
+**Request flow:**
+1. Amplify attaches the Cognito ID token to every request
+2. API Gateway validates the JWT and injects `claims.sub` as the user ID
+3. Lambda calls `trainflow.shared.auth.extract_user_id(event)` — user ID never comes from the request body
+4. DynamoDB read/write via `trainflow.shared.db` (handles `Decimal` ↔ `float` conversion)
+
+**AI chat flow:**
+`tf-chat-message` → `context_builder.py` (pre-loads health + plan snapshot) → `chat_handler.py` (up to 5 tool-call rounds) → `tool_executor.py` (DynamoDB reads/writes) → final GPT-5 reply
+
+---
+
+## Tech Stack
+
+**iOS / watchOS**
+- SwiftUI (iOS 17+), Swift 5.9
+- HealthKit, WatchKit / watchOS 10, WatchConnectivity
+- AWS Amplify iOS SDK (Cognito auth)
+- Swift Charts, Combine, async/await
+
+**Backend**
+- Python 3.12 on AWS Lambda
+- AWS API Gateway REST, DynamoDB (6 tables, on-demand), Cognito, SES, Secrets Manager
+- OpenAI Python SDK (GPT-5 primary, GPT-5-mini summarisation)
+
+**Infrastructure**
+- AWS CDK (TypeScript) — single stack `TrainFlowStack` in `ap-south-1`
+- XcodeGen (`project.yml`) for Xcode project generation
+
+---
+
+## Project Structure
+
+```
+TrainFlow/                  iOS + watchOS Xcode project (generated by XcodeGen)
+  TrainFlow/                iOS app target
+    Services/               APIClient, HealthKitManager, TrainingService, AuthService
+    Views/                  SwiftUI views (TodayView, AICoachView, HealthView, …)
+    Models/                 Codable data models
+    Theme/                  TFTheme — colours, fonts, card styles
+  TrainFlowWatch/           watchOS target
+    Views/                  ActiveWorkoutView, WorkoutSummaryView, TodayWorkoutView
+  project.yml               XcodeGen spec
+
+backend/
+  trainflow/
+    handlers/               One directory per Lambda function
+      auth/                 DefineAuthChallenge, CreateAuthChallenge, VerifyAuthChallenge
+      chat/                 tf-chat-message, tf-chat-history, tf-chat-clear
+      health/               tf-health-sync, tf-health-get, tf-health-ai-summary
+      plans/                tf-plan-create, tf-plan-get, tf-plan-generate, tf-plan-update-day
+      workouts/             tf-workout-log, tf-workout-get, tf-workout-report, tf-workout-healthkit-sync
+      profile/              tf-profile-get, tf-profile-update, tf-profile-init
+      account/              tf-account-delete
+    ai/
+      openai_client.py      GPT-5 / GPT-5-mini client (key from Secrets Manager)
+      chat_handler.py       Agentic loop (up to 5 tool-call rounds)
+      context_builder.py    Pre-loads user/plan/health snapshot before each AI call
+      tool_executor.py      Dispatches function calls to DynamoDB
+      tools.py              8 OpenAI function-calling tool definitions
+      prompts.py            System prompt builder
+    shared/
+      auth.py               extract_user_id(event)
+      db.py                 DynamoDB helpers + Decimal handling
+      response.py           ok() / err() HTTP response builders
+  requirements.txt
+
+infrastructure/
+  lib/
+    trainflow-stack.ts      Root CDK stack
+    trainflow-tables.ts     6 DynamoDB tables
+    trainflow-auth.ts       Cognito User Pool + App Client
+    trainflow-lambdas.ts    24 Lambda functions + IAM roles
+    trainflow-api.ts        API Gateway + Cognito authoriser + routes
+```
+
+---
+
+## DynamoDB Tables
+
+| Table | PK | SK | Purpose |
+|---|---|---|---|
+| `tf-users` | `userId` | — | User profile, goals, injuries, onboarding state |
+| `tf-training-plans` | `userId` | `planId` | Plan metadata (weeks, goal type, dates) |
+| `tf-workout-days` | `userId` | `{planId}#W{ww}#D{d}` | Per-day workout prescriptions |
+| `tf-health` | `userId` | `HEALTH#{YYYY-MM-DD}` | Daily HealthKit snapshots |
+| `tf-workouts` | `userId` | `{ISO-ts}#{UUID}` | Logged + HealthKit-synced workouts |
+| `tf-chat` | `userId` | `{ISO-ts}#{UUID}` | Conversation history + summaries |
+
+---
+
+## Setup
+
+### Prerequisites
+
+- Xcode 15+ with iOS 17 SDK
+- Node.js 18+ and npm
+- Python 3.12+
+- AWS CLI configured for `ap-south-1`
+- AWS CDK CLI: `npm install -g aws-cdk`
+- XcodeGen: `brew install xcodegen`
+- An OpenAI API key
+
+### 1. Deploy the backend
+
+```bash
+# Install vendored Python dependencies (Lambda layer)
+pip3 install -r backend/requirements.txt -t backend/
+
+# Build and deploy infrastructure
+cd infrastructure
+npm install
+npm run build
+cdk deploy --require-approval never
+```
+
+Note the three CDK outputs: `ApiGatewayUrl`, `UserPoolId`, `UserPoolClientId`.
+
+### 2. Store the OpenAI key
+
+```bash
+aws secretsmanager create-secret \
+  --name trainflow/openai-api-key \
+  --secret-string '{"api_key":"sk-..."}' \
+  --region ap-south-1
+```
+
+### 3. Configure the iOS app
+
+Copy `TrainFlow/amplifyconfiguration.json.example` to
+`TrainFlow/amplifyconfiguration.json` and fill in the CDK outputs:
+
+```json
+{
+  "auth": {
+    "plugins": {
+      "awsCognitoAuthPlugin": {
+        "UserAgent": "aws-amplify/cli",
+        "CognitoUserPool": {
+          "Default": {
+            "PoolId": "<UserPoolId>",
+            "AppClientId": "<UserPoolClientId>",
+            "Region": "ap-south-1"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Update `TrainFlow/TrainFlow/Config/Config.plist` with the `ApiGatewayUrl`.
+
+### 4. Generate the Xcode project and build
+
+```bash
+cd TrainFlow
+xcodegen generate
+open TrainFlow.xcodeproj
+```
+
+Build and run on a real device (HealthKit requires physical hardware).
+
+---
+
+## Lambda Configuration
+
+| Group | Timeout | Memory |
+|---|---|---|
+| Standard handlers (profile, health, workouts, chat) | 30s | 256 MB |
+| `tf-chat-message` (agentic AI loop) | 60s | 512 MB |
+| `tf-plan-generate` (full plan via GPT-5) | 900s | 512 MB |
+| `tf-health-ai-summary`, `tf-workout-report` | 30s | 256 MB |
+| Cognito auth triggers (×3) | 15s | 128 MB |
+
+---
+
+## Environment Variables (set by CDK)
+
+`TF_USERS_TABLE` · `TF_PLANS_TABLE` · `TF_WORKOUT_DAYS_TABLE` · `TF_HEALTH_TABLE` · `TF_WORKOUTS_TABLE` · `TF_CHAT_TABLE` · `OPENAI_MODEL` · `OPENAI_SECONDARY_MODEL`
+
+---
+
+## Local Lambda Testing
+
+There is no local test runner. Invoke handlers directly in Python:
+
+```python
+from trainflow.handlers.chat.message.index import handler
+
+event = {
+    "requestContext": {"authorizer": {"claims": {"sub": "test-user-id"}}},
+    "body": '{"message": "What should I do today?"}',
+}
+handler(event, None)
+```
+
+---
+
+## Security Notes
+
+- User IDs are always extracted from Cognito JWT claims — never from request bodies
+- Each Lambda has a least-privilege IAM role scoped to specific table ARNs
+- The OpenAI key is in Secrets Manager, never in source code or environment variables
+- `amplifyconfiguration.json` and `.env` files are in `.gitignore`
+- `DELETE /account` permanently wipes all user data across all 6 tables
+- CloudWatch log groups have 7-day retention
+
+---
+
+## Author
+
+**Apoorav Rao** · [github.com/apoorav21](https://github.com/apoorav21)
