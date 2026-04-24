@@ -21,7 +21,7 @@ final class PlanChatViewModel: ObservableObject {
 
     init() {
         let welcome = PlanChatMessage(role: "assistant",
-            text: "Hey! 👋 I'm your AI training coach. Let's build a plan tailored just for you.\n\nFirst — what's your goal? (e.g., run a 5K, finish a marathon, get fitter, lose weight)")
+            text: "I'm Coach Goggins. No excuses, no hand-holding — just results. Let's build a plan that will push you to your limit.\n\nFirst — what are we training for? (e.g., run a 5K, finish a marathon, get fitter, lose weight)")
         messages = [welcome]
     }
 
@@ -126,7 +126,7 @@ struct PlanChatView: View {
                                 .foregroundStyle(TFTheme.accentOrange)
                         }
                         VStack(alignment: .leading, spacing: 1) {
-                            Text("AI Training Coach")
+                            Text("Coach Goggins")
                                 .font(.system(.subheadline, design: .rounded, weight: .bold))
                                 .foregroundStyle(TFTheme.textPrimary)
                             Text(vm.isGenerating ? "Generating plan..." : "Online")
@@ -151,148 +151,138 @@ struct PlanChatView: View {
     private var chatScrollView: some View {
         ScrollViewReader { proxy in
             ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 12) {
+                LazyVStack(spacing: 0) {
                     ForEach(vm.messages) { msg in
-                        PlanChatBubble(message: msg)
+                        PlanMessageRow(message: msg)
                             .id(msg.id)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                     if vm.isTyping || vm.isGenerating {
-                        TypingBubble(isGenerating: vm.isGenerating)
+                        PlanTypingRow(isGenerating: vm.isGenerating)
                             .id("typing")
                     }
+                    Color.clear.frame(height: 8).id("bottom")
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 20)
+                .padding(.top, 8)
+                .animation(.easeOut(duration: 0.3), value: vm.messages.count)
+                .animation(.easeOut(duration: 0.2), value: vm.isTyping)
             }
             .onChange(of: vm.messages.count) { _, _ in
-                withAnimation(.easeOut(duration: 0.3)) {
-                    if let lastId = vm.messages.last?.id {
-                        proxy.scrollTo(lastId, anchor: .bottom)
-                    }
-                }
+                withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
             }
-            .onChange(of: vm.isTyping) { _, _ in
-                withAnimation { proxy.scrollTo("typing", anchor: .bottom) }
+            .onChange(of: vm.isTyping) { _, typing in
+                if typing { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
+            }
+            .onChange(of: vm.isGenerating) { _, gen in
+                if gen { withAnimation { proxy.scrollTo("typing", anchor: .bottom) } }
             }
         }
     }
 
     private var inputBar: some View {
         VStack(spacing: 0) {
-            Divider().background(TFTheme.bgCard)
+            Divider().background(Color.white.opacity(0.07))
             HStack(spacing: 12) {
-                TextField("Type your answer...", text: $vm.inputText, axis: .vertical)
-                    .font(.system(.body, design: .rounded))
-                    .foregroundStyle(TFTheme.textPrimary)
-                    .lineLimit(4)
-                    .focused($inputFocused)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(TFTheme.bgCard)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .onSubmit { vm.send() }
+                HStack(spacing: 8) {
+                    Image(systemName: "text.bubble")
+                        .font(.system(size: 15))
+                        .foregroundStyle(TFTheme.textTertiary)
+                    TextField("No excuses. Answer Goggins...", text: $vm.inputText, axis: .vertical)
+                        .font(.system(size: 15))
+                        .foregroundStyle(TFTheme.textPrimary)
+                        .lineLimit(1...4)
+                        .focused($inputFocused)
+                        .tint(TFTheme.accentOrange)
+                        .onSubmit { vm.send() }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(TFTheme.bgCard)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
 
                 Button(action: { vm.send() }) {
+                    let isEmpty = vm.inputText.trimmingCharacters(in: .whitespaces).isEmpty
                     ZStack {
-                        Circle().fill(vm.inputText.trimmingCharacters(in: .whitespaces).isEmpty ?
-                                      TFTheme.bgCard : TFTheme.accentOrange)
+                        Circle()
+                            .fill(isEmpty ? AnyShapeStyle(TFTheme.bgCard) : AnyShapeStyle(
+                                LinearGradient(colors: [TFTheme.accentOrange, TFTheme.accentRed],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing)))
+                            .frame(width: 44, height: 44)
                         Image(systemName: "arrow.up")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(isEmpty ? TFTheme.textTertiary : .white)
                     }
-                    .frame(width: 40, height: 40)
                 }
                 .disabled(vm.inputText.trimmingCharacters(in: .whitespaces).isEmpty || vm.isTyping || vm.isGenerating)
+                .animation(.easeInOut(duration: 0.2), value: vm.inputText.isEmpty)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .background(TFTheme.bgPrimary)
         }
     }
 }
 
-// MARK: - Chat Bubble
-struct PlanChatBubble: View {
+// MARK: - Message Row (no-bubble style matching AICoachView)
+struct PlanMessageRow: View {
     let message: PlanChatMessage
     private var isUser: Bool { message.role == "user" }
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            if isUser { Spacer(minLength: 60) }
-            if !isUser {
-                ZStack {
-                    Circle().fill(TFTheme.accentOrange.opacity(0.2)).frame(width: 30, height: 30)
-                    Image(systemName: "brain.head.profile.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(TFTheme.accentOrange)
-                }
+        if isUser {
+            HStack(alignment: .bottom) {
+                Spacer(minLength: 72)
+                Text(message.text)
+                    .font(.system(size: 15))
+                    .foregroundStyle(TFTheme.textPrimary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(TFTheme.bgCard)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
-            Text(message.text)
-                .font(.system(.body, design: .rounded))
-                .foregroundStyle(isUser ? .white : TFTheme.textPrimary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(isUser ? TFTheme.accentOrange : TFTheme.bgCard)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .clipShape(
-                    .rect(
-                        topLeadingRadius: isUser ? 18 : 4,
-                        bottomLeadingRadius: 18,
-                        bottomTrailingRadius: isUser ? 4 : 18,
-                        topTrailingRadius: 18
-                    )
-                )
-            if !isUser { Spacer(minLength: 60) }
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 2)
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(message.text)
+                    .font(.system(size: 15))
+                    .foregroundStyle(TFTheme.textPrimary)
+                    .lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 4)
         }
     }
 }
 
-// MARK: - Typing Bubble
-struct TypingBubble: View {
+// MARK: - Typing / Generating Row
+struct PlanTypingRow: View {
     let isGenerating: Bool
-    @State private var dotPhase = 0
-    @State private var pulseScale: CGFloat = 1.0
+    @State private var phase = 0
+    private let timer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            ZStack {
-                Circle().fill(TFTheme.accentOrange.opacity(0.2)).frame(width: 30, height: 30)
-                Image(systemName: "brain.head.profile.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(TFTheme.accentOrange)
-            }
-            generatingContent
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(TFTheme.bgCard)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            Spacer(minLength: 60)
-        }
-        .onAppear { dotPhase = 1 }
-    }
-
-    @ViewBuilder
-    private var generatingContent: some View {
-        if isGenerating {
-            HStack(spacing: 8) {
-                ProgressView()
-                    .tint(TFTheme.accentOrange)
-                    .scaleEffect(0.8)
+        HStack(spacing: 10) {
+            if isGenerating {
+                ProgressView().tint(TFTheme.accentOrange).scaleEffect(0.85)
                 Text("Building your plan…")
-                    .font(.system(.caption, design: .rounded))
+                    .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(TFTheme.textSecondary)
-            }
-        } else {
-            HStack(spacing: 5) {
-                ForEach(0..<3, id: \.self) { i in
+            } else {
+                ForEach(0..<3) { i in
                     Circle()
-                        .fill(TFTheme.textTertiary)
-                        .frame(width: 7, height: 7)
-                        .scaleEffect(dotPhase == i ? 1.4 : 1.0)
-                        .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: dotPhase)
+                        .fill(i == phase ? TFTheme.accentOrange : TFTheme.textTertiary.opacity(0.5))
+                        .frame(width: 6, height: 6)
+                        .scaleEffect(i == phase ? 1.3 : 0.85)
+                        .animation(.easeInOut(duration: 0.3), value: phase)
                 }
             }
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .onReceive(timer) { _ in if !isGenerating { phase = (phase + 1) % 3 } }
     }
 }

@@ -25,7 +25,7 @@ from trainflow.ai.tools import TOOLS
 from trainflow.shared.db import db
 
 # Safety cap to prevent runaway agentic loops
-MAX_TOOL_ROUNDS = 5
+MAX_TOOL_ROUNDS = 8
 
 
 def handle_chat(user_id: str, user_message: str) -> dict:

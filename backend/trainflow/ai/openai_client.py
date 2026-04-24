@@ -20,9 +20,9 @@ import os
 import boto3
 from openai import OpenAI
 
-PRIMARY_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o')
-SECONDARY_MODEL = os.environ.get('OPENAI_SECONDARY_MODEL', 'gpt-4o-mini')
-PLAN_MODEL = os.environ.get('OPENAI_PLAN_MODEL', 'gpt-5.4')
+PRIMARY_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-5.4')
+SECONDARY_MODEL = os.environ.get('OPENAI_SECONDARY_MODEL', 'gpt-5.4-mini')
+PLAN_MODEL = os.environ.get('OPENAI_PLAN_MODEL', 'gpt-5.4-nano')
 
 SECRET_NAME = 'trainflow/openai-api-key'
 
@@ -125,11 +125,10 @@ def invoke_secondary(
 def invoke_plan(
     messages: list,
     system: str,
-    max_tokens: int = 60000,
 ):
     """
-    Invoke gpt-5.4 for one-shot full training plan generation.
-    Supports 128k output tokens — enough for any plan length.
+    Invoke the plan model (gpt-5.4-nano) for one-shot full training plan generation.
+    No max_completion_tokens — lets the model use its full output capacity.
     """
     client = get_client()
 
@@ -138,5 +137,4 @@ def invoke_plan(
     return client.chat.completions.create(
         model=PLAN_MODEL,
         messages=full_messages,
-        max_completion_tokens=max_tokens,
     )

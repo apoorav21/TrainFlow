@@ -17,26 +17,27 @@ struct TFPlan: Codable, Identifiable {
     let createdAt: String
 
     var goalDate: String { endDate }
-    var fitnessLevel: String { "" }
+    let fitnessLevel: String
     var raceName: String? { nil }
 
-    // daysPerWeek may be absent in older records — default to 4
+    // daysPerWeek / fitnessLevel may be absent in older records
     private enum CodingKeys: String, CodingKey {
         case planId, planName, goalType, startDate, endDate
-        case totalWeeks, currentWeek, daysPerWeek, isActive, createdAt
+        case totalWeeks, currentWeek, daysPerWeek, isActive, createdAt, fitnessLevel
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        planId      = try c.decode(String.self, forKey: .planId)
-        planName    = try c.decode(String.self, forKey: .planName)
-        goalType    = try c.decode(String.self, forKey: .goalType)
-        startDate   = try c.decode(String.self, forKey: .startDate)
-        endDate     = try c.decode(String.self, forKey: .endDate)
-        totalWeeks  = try c.decode(Int.self,    forKey: .totalWeeks)
-        currentWeek = (try? c.decode(Int.self,  forKey: .currentWeek)) ?? 1
-        daysPerWeek = (try? c.decode(Int.self,  forKey: .daysPerWeek)) ?? 4
-        isActive    = (try? c.decode(String.self, forKey: .isActive)) ?? "true"
-        createdAt   = (try? c.decode(String.self, forKey: .createdAt)) ?? ""
+        planId       = try c.decode(String.self, forKey: .planId)
+        planName     = try c.decode(String.self, forKey: .planName)
+        goalType     = try c.decode(String.self, forKey: .goalType)
+        startDate    = try c.decode(String.self, forKey: .startDate)
+        endDate      = try c.decode(String.self, forKey: .endDate)
+        totalWeeks   = try c.decode(Int.self,    forKey: .totalWeeks)
+        currentWeek  = (try? c.decode(Int.self,  forKey: .currentWeek)) ?? 1
+        daysPerWeek  = (try? c.decode(Int.self,  forKey: .daysPerWeek)) ?? 4
+        isActive     = (try? c.decode(String.self, forKey: .isActive)) ?? "true"
+        createdAt    = (try? c.decode(String.self, forKey: .createdAt)) ?? ""
+        fitnessLevel = (try? c.decode(String.self, forKey: .fitnessLevel)) ?? ""
     }
 }
 

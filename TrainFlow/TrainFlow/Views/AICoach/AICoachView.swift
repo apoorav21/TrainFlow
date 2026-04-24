@@ -29,7 +29,6 @@ struct AICoachView: View {
             async let history: () = vm.loadHistory()
             async let health: () = hk.fetchAll()
             _ = await (history, health)
-            if !vm.messages.isEmpty { showChat = true }
         }
         .onReceive(NotificationCenter.default.publisher(for: .openAICoachWithMessage)) { note in
             if let msg = note.userInfo?["message"] as? String {

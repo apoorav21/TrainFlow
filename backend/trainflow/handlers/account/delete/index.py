@@ -40,18 +40,17 @@ def _delete_all_items(table_name: str, sk_attr: str | None, user_id: str) -> int
         table.delete_item(Key={'userId': user_id})
         return 1
 
-    # Query all items for this user then batch-delete
+    # Paginate through ALL items for this user (no ProjectionExpression — avoids
+    # issues with reserved-word attribute names), then batch-delete by key pair.
     items = []
-    kwargs = {
-        'KeyConditionExpression': Key('userId').eq(user_id),
-        'ProjectionExpression': f'userId, #{sk_attr}',
-        'ExpressionAttributeNames': {f'#{sk_attr}': sk_attr},
-    }
-    response = table.query(**kwargs)
-    items.extend(response.get('Items', []))
-    while 'LastEvaluatedKey' in response:
-        response = table.query(**kwargs, ExclusiveStartKey=response['LastEvaluatedKey'])
+    kwargs = {'KeyConditionExpression': Key('userId').eq(user_id)}
+    while True:
+        response = table.query(**kwargs)
         items.extend(response.get('Items', []))
+        last = response.get('LastEvaluatedKey')
+        if not last:
+            break
+        kwargs['ExclusiveStartKey'] = last
 
     with table.batch_writer() as batch:
         for item in items:

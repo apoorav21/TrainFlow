@@ -103,6 +103,7 @@ def _sync_health(event):
             return bad_request('No valid records to sync (all were missing date)')
 
         db.batch_put_health_data(items)
+        print(f'[health/sync] Wrote {len(items)} records for user {user_id}')
 
         return ok({
             'synced': True,

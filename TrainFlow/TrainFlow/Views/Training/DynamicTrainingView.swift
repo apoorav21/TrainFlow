@@ -17,23 +17,55 @@ final class DynamicTrainingViewModel: ObservableObject {
     @Published var showAllActivity = false
     @Published var selectedActivity: WorkoutActivity?
 
+    // Calendar weeks: each entry is 7 slots Mon(0)…Sun(6), nil = no workout that day
+    var calendarWeeks: [[RemoteWorkoutDay?]] {
+        guard !workoutDays.isEmpty else { return [] }
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+        let cal = Calendar.current
+
+        func monday(of date: Date) -> Date {
+            let wd = cal.component(.weekday, from: date) // 1=Sun…7=Sat
+            let sub = wd == 1 ? 6 : wd - 2
+            return cal.startOfDay(for: cal.date(byAdding: .day, value: -sub, to: date)!)
+        }
+
+        // Collect unique Monday dates across all workout days
+        var mondaySet = Set<Date>()
+        for day in workoutDays {
+            if let d = f.date(from: day.scheduledDate) { mondaySet.insert(monday(of: d)) }
+        }
+
+        // Build lookup: dateStr → workout day
+        let lookup = Dictionary(uniqueKeysWithValues: workoutDays.compactMap { d -> (String, RemoteWorkoutDay)? in
+            (d.scheduledDate, d)
+        })
+
+        return mondaySet.sorted().map { mon in
+            (0..<7).map { offset -> RemoteWorkoutDay? in
+                guard let slotDate = cal.date(byAdding: .day, value: offset, to: mon) else { return nil }
+                return lookup[f.string(from: slotDate)]
+            }
+        }
+    }
+
+    // Kept for compatibility — used only by todayWorkout / other non-grid code
     var weeks: [[RemoteWorkoutDay]] {
         guard !workoutDays.isEmpty else { return [] }
         let sorted = workoutDays.sorted { $0.scheduledDate < $1.scheduledDate }
-        var result: [[RemoteWorkoutDay]] = []
-        var current: [RemoteWorkoutDay] = []
+        var result: [[RemoteWorkoutDay]] = []; var current: [RemoteWorkoutDay] = []
         var currentWeek = sorted.first?.weekNumber ?? 1
         for day in sorted {
-            if day.weekNumber != currentWeek {
-                result.append(current); current = []; currentWeek = day.weekNumber
-            }
+            if day.weekNumber != currentWeek { result.append(current); current = []; currentWeek = day.weekNumber }
             current.append(day)
         }
         if !current.isEmpty { result.append(current) }
         return result
     }
 
-    var currentWeekDays: [RemoteWorkoutDay] { weeks.indices.contains(selectedWeekIndex) ? weeks[selectedWeekIndex] : [] }
+    var currentCalendarWeek: [RemoteWorkoutDay?] {
+        calendarWeeks.indices.contains(selectedWeekIndex) ? calendarWeeks[selectedWeekIndex] : []
+    }
+    var currentWeekDays: [RemoteWorkoutDay] { currentCalendarWeek.compactMap { $0 } }
     var todayWorkout: RemoteWorkoutDay? {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
         let todayStr = f.string(from: Date())
@@ -124,12 +156,12 @@ final class DynamicTrainingViewModel: ObservableObject {
 
     private func setCurrentWeek() {
         let today = Calendar.current.startOfDay(for: Date())
-        for (i, week) in weeks.enumerated() {
-            if week.contains(where: { dayDate($0) >= today }) {
+        for (i, week) in calendarWeeks.enumerated() {
+            if week.compactMap({ $0 }).contains(where: { dayDate($0) >= today }) {
                 selectedWeekIndex = i; return
             }
         }
-        selectedWeekIndex = max(0, weeks.count - 1)
+        selectedWeekIndex = max(0, calendarWeeks.count - 1)
     }
 
     func dayDate(_ day: RemoteWorkoutDay) -> Date {
@@ -141,17 +173,17 @@ final class DynamicTrainingViewModel: ObservableObject {
     // e.g. "cross_training Cycling Rest Day" → blue (not textTertiary), because "cross" appears first.
     func dayTypeColor(_ combined: String) -> Color {
         let t = combined.lowercased()
-        if t.contains("cross") || t.contains("cycling") || t.contains("swim") { return TFTheme.accentBlue }
-        if t.contains("strength") { return TFTheme.accentPurple }
-        if t.contains("rest") { return TFTheme.textTertiary }
-        if t.contains("easy") { return TFTheme.accentGreen }
-        if t.contains("long") { return TFTheme.accentOrange }
-        if t.contains("tempo") { return TFTheme.accentYellow }
         if t.contains("interval") || t.contains("speed") { return TFTheme.accentRed }
-        if t.contains("recover") { return TFTheme.accentCyan }
+        if t.contains("tempo") { return TFTheme.accentYellow }
+        if t.contains("long") { return TFTheme.accentOrange }
+        if t.contains("strength") { return TFTheme.accentPurple }
+        if t.contains("cross") || t.contains("cycl") { return TFTheme.accentBlue }
+        if t.contains("swim") { return TFTheme.accentCyan }
+        if t.contains("recover") || t.contains("rest") { return TFTheme.accentCyan }
+        if t.contains("easy") { return TFTheme.accentGreen }
         if t.contains("race") { return TFTheme.accentOrange }
         if t.contains("run") { return TFTheme.accentGreen }
-        return TFTheme.textSecondary
+        return TFTheme.accentGreen
     }
 
     func dayTypeIcon(_ combined: String) -> String {
@@ -278,14 +310,14 @@ struct DynamicTrainingView: View {
             VStack(spacing: 12) {
                 Text("No Training Plan Yet")
                     .font(.system(size: 26, weight: .black, design: .rounded)).foregroundStyle(TFTheme.textPrimary)
-                Text("Chat with your AI coach to create a personalised plan tailored to your goals and fitness level.")
+                Text("Chat with Coach Goggins to create a personalised plan tailored to your goals and fitness level.")
                     .font(.system(.body, design: .rounded)).foregroundStyle(TFTheme.textSecondary)
                     .multilineTextAlignment(.center).padding(.horizontal, 32)
             }
             Button(action: { vm.showPlanChat = true }) {
                 HStack(spacing: 10) {
                     Image(systemName: "bubble.left.and.bubble.right.fill")
-                    Text("Chat with AI Coach")
+                    Text("Chat with Coach Goggins")
                 }
                 .font(.system(.body, design: .rounded, weight: .bold)).foregroundStyle(.white)
                 .frame(maxWidth: 280, minHeight: 54)
@@ -346,7 +378,7 @@ struct DynamicTrainingView: View {
                 }.frame(height: 8)
             }
             HStack(spacing: 16) {
-                planStat(label: "Level", value: plan.fitnessLevel.capitalized, color: TFTheme.accentBlue)
+                planStat(label: "Level", value: plan.fitnessLevel.isEmpty ? "—" : plan.fitnessLevel.capitalized, color: TFTheme.accentBlue)
                 planStat(label: "Days/Week", value: "\(plan.daysPerWeek)", color: TFTheme.accentPurple)
                 planStat(label: "Goal Date", value: shortDate(plan.goalDate), color: TFTheme.accentGreen)
             }
@@ -390,20 +422,20 @@ struct DynamicTrainingView: View {
     private var weekSelector: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-                ForEach(vm.weeks.indices, id: \.self) { i in
-                    let week = vm.weeks[i]
+                ForEach(vm.calendarWeeks.indices, id: \.self) { i in
+                    let slots = vm.calendarWeeks[i]
                     let isSelected = i == vm.selectedWeekIndex
-                    let phase = week.first?.phase ?? "Base"
-                    let phaseColor = phaseColor(phase)
+                    let phase = slots.compactMap { $0 }.first?.phase ?? "Base"
+                    let pColor = phaseColor(phase)
                     Button(action: { withAnimation(.spring(response: 0.3)) { vm.selectedWeekIndex = i } }) {
                         VStack(spacing: 4) {
-                            Text("Wk \(week.first?.weekNumber ?? i+1)")
+                            Text("Wk \(i + 1)")
                                 .font(.system(.caption, design: .rounded, weight: .bold))
                                 .foregroundStyle(isSelected ? .white : TFTheme.textSecondary)
-                            Circle().fill(isSelected ? Color.white : phaseColor).frame(width: 6, height: 6)
+                            Circle().fill(isSelected ? Color.white : pColor).frame(width: 6, height: 6)
                         }
                         .padding(.horizontal, 14).padding(.vertical, 10)
-                        .background(isSelected ? phaseColor : TFTheme.bgCard)
+                        .background(isSelected ? pColor : TFTheme.bgCard)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                 }
@@ -411,10 +443,12 @@ struct DynamicTrainingView: View {
         }
     }
 
+    private let calendarDayHeaders = ["M","T","W","T","F","S","S"]
+
     private var weekGrid: some View {
         VStack(spacing: 12) {
-            let days = vm.currentWeekDays
-            let phase = days.first?.phase ?? "Base"
+            let slots = vm.currentCalendarWeek
+            let phase = slots.compactMap { $0 }.first?.phase ?? "Base"
             HStack {
                 HStack(spacing: 6) {
                     Circle().fill(phaseColor(phase)).frame(width: 8, height: 8)
@@ -423,22 +457,25 @@ struct DynamicTrainingView: View {
                 Spacer()
             }.padding(.horizontal, 20)
 
-            let letters = ["S","M","T","W","T","F","S"]
+            // Fixed Mon–Sun header
             HStack(spacing: 6) {
-                ForEach(letters.indices, id: \.self) { i in
-                    Text(letters[i]).font(.system(.caption2, design: .rounded, weight: .medium))
-                        .foregroundStyle(TFTheme.textTertiary).frame(maxWidth: .infinity)
+                ForEach(calendarDayHeaders.indices, id: \.self) { i in
+                    Text(calendarDayHeaders[i])
+                        .font(.system(.caption2, design: .rounded, weight: .medium))
+                        .foregroundStyle(TFTheme.textTertiary)
+                        .frame(maxWidth: .infinity)
                 }
             }.padding(.horizontal, 20)
 
+            // 7 slots — real workout day or empty placeholder
             HStack(spacing: 6) {
-                ForEach(days) { day in
-                    RemoteDayCell(day: day, vm: vm)
-                        .onTapGesture { if !day.isRestDay { vm.selectedDay = day } }
-                }
-                // Pad remaining cells
-                if days.count < 7 {
-                    ForEach(0..<(7 - days.count), id: \.self) { _ in Color.clear.frame(maxWidth: .infinity, minHeight: 52) }
+                ForEach(0..<7, id: \.self) { i in
+                    if let day = (slots.indices.contains(i) ? slots[i] : nil) {
+                        RemoteDayCell(day: day, vm: vm)
+                            .onTapGesture { if !day.isRestDay { vm.selectedDay = day } }
+                    } else {
+                        EmptyDayCell()
+                    }
                 }
             }.padding(.horizontal, 20)
         }
@@ -492,6 +529,7 @@ struct DynamicTrainingView: View {
     }
 
     // MARK: - Helpers
+
     private func daysUntil(_ dateStr: String) -> String {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
         guard let d = f.date(from: dateStr) else { return "—" }
@@ -517,7 +555,11 @@ struct DynamicTrainingView: View {
 
     private func planStat(label: String, value: String, color: Color) -> some View {
         VStack(spacing: 3) {
-            Text(value).font(.system(.subheadline, design: .rounded, weight: .black)).foregroundStyle(color)
+            Text(value)
+                .font(.system(.subheadline, design: .rounded, weight: .black))
+                .foregroundStyle(color)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
             Text(label).font(.system(.caption2, design: .rounded)).foregroundStyle(TFTheme.textTertiary)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 10)
@@ -526,6 +568,24 @@ struct DynamicTrainingView: View {
 }
 
 // MARK: - Remote Day Cell
+// MARK: - Empty Day Cell (no workout scheduled)
+struct EmptyDayCell: View {
+    var body: some View {
+        VStack(spacing: 5) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.white.opacity(0.04))
+                    .frame(height: 52)
+                Text("—")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.white.opacity(0.15))
+            }
+            Text(" ").font(.system(.caption2, design: .rounded))
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
 struct RemoteDayCell: View {
     let day: RemoteWorkoutDay
     let vm: DynamicTrainingViewModel
@@ -541,7 +601,7 @@ struct RemoteDayCell: View {
                     .fill(isToday ? color : (day.isCompleted ? color.opacity(0.3) : TFTheme.bgCard))
                     .frame(height: 52)
                 if day.isRestDay {
-                    Image(systemName: "moon.zzz.fill").font(.system(size: 14)).foregroundStyle(TFTheme.textTertiary)
+                    Image(systemName: "moon.zzz.fill").font(.system(size: 14)).foregroundStyle(isToday ? .white : color)
                 } else {
                     VStack(spacing: 3) {
                         Image(systemName: vm.dayTypeIcon("\(day.type) \(day.dayType)"))
@@ -1399,7 +1459,7 @@ struct AdaptPlanSheet: View {
                         ZStack {
                             RoundedRectangle(cornerRadius: 16, style: .continuous).fill(TFTheme.accentOrange)
                             if isLoading { ProgressView().tint(.white) }
-                            else { Text("Get AI Feedback").font(.system(.body, design: .rounded, weight: .bold)).foregroundStyle(.white) }
+                            else { Text("Get Coach Feedback").font(.system(.body, design: .rounded, weight: .bold)).foregroundStyle(.white) }
                         }.frame(height: 54)
                     }.disabled(isLoading || message.trimmingCharacters(in: .whitespaces).isEmpty)
                     Spacer()

@@ -35,55 +35,145 @@ struct OverallTabView: View {
     }
 
     private var scoreCard: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 0) {
             ZStack {
+                // Outer glow layer
                 Circle()
-                    .stroke(Color.white.opacity(0.08), lineWidth: 14)
-                    .frame(width: 140, height: 140)
+                    .trim(from: 0, to: CGFloat(vm.overallScore) / 100.0 * 0.75)
+                    .stroke(scoreColor.opacity(0.3), style: StrokeStyle(lineWidth: 22, lineCap: .round))
+                    .rotationEffect(.degrees(135))
+                    .blur(radius: 8)
+                    .frame(width: 164, height: 164)
+                    .animation(.spring(response: 0.9, dampingFraction: 0.75), value: vm.overallScore)
+
+                // Background arc (270°, opens at bottom)
                 Circle()
-                    .trim(from: 0, to: CGFloat(vm.overallScore) / 100.0)
-                    .stroke(scoreColor, style: StrokeStyle(lineWidth: 14, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .frame(width: 140, height: 140)
-                    .animation(.easeOut(duration: 0.8), value: vm.overallScore)
-                VStack(spacing: 2) {
+                    .trim(from: 0, to: 0.75)
+                    .stroke(Color.white.opacity(0.07), style: StrokeStyle(lineWidth: 14, lineCap: .round))
+                    .rotationEffect(.degrees(135))
+                    .frame(width: 164, height: 164)
+
+                // Tick marks at 25 / 50 / 75
+                ForEach([0.25, 0.50, 0.75], id: \.self) { pct in
+                    Circle()
+                        .trim(from: CGFloat(pct * 0.75) - 0.003, to: CGFloat(pct * 0.75) + 0.003)
+                        .stroke(Color.white.opacity(0.18), style: StrokeStyle(lineWidth: 14, lineCap: .butt))
+                        .rotationEffect(.degrees(135))
+                        .frame(width: 164, height: 164)
+                }
+
+                // Filled arc with gradient
+                Circle()
+                    .trim(from: 0, to: max(CGFloat(vm.overallScore) / 100.0 * 0.75, 0.001))
+                    .stroke(
+                        LinearGradient(
+                            colors: [scoreColor.opacity(0.7), scoreColor],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(135))
+                    .frame(width: 164, height: 164)
+                    .animation(.spring(response: 0.9, dampingFraction: 0.75), value: vm.overallScore)
+
+                // Score number
+                VStack(spacing: 0) {
                     Text("\(vm.overallScore)")
-                        .font(.system(size: 44, weight: .bold, design: .rounded))
-                        .foregroundStyle(scoreColor)
-                    Text("/ 100").font(.caption).foregroundStyle(TFTheme.textTertiary)
+                        .font(.system(size: 52, weight: .bold, design: .rounded))
+                        .foregroundStyle(vm.overallScore > 0 ? scoreColor : TFTheme.textTertiary)
+                        .shadow(color: scoreColor.opacity(0.4), radius: 8, x: 0, y: 0)
+                        .animation(.spring(response: 0.5), value: vm.overallScore)
+                    Text("out of 100")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(TFTheme.textTertiary)
+                }
+                .offset(y: 8)
+            }
+            .frame(height: 180)
+
+            Spacer().frame(height: 4)
+
+            Text("Overall Health Score")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(TFTheme.textSecondary)
+
+            Spacer().frame(height: 10)
+
+            // Score badge + rating scale
+            HStack(spacing: 12) {
+                Label(scoreLabel, systemImage: scoreBadgeIcon)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(scoreColor)
+                    .padding(.horizontal, 14).padding(.vertical, 6)
+                    .background(scoreColor.opacity(0.15))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(scoreColor.opacity(0.25), lineWidth: 1))
+            }
+
+            Spacer().frame(height: 16)
+
+            // Mini scale bar
+            HStack(spacing: 0) {
+                ForEach(0..<20, id: \.self) { i in
+                    let pct = Double(i) / 19.0
+                    let filled = pct <= Double(vm.overallScore) / 100.0
+                    Capsule()
+                        .fill(filled ? scaleBarColor(pct: pct) : Color.white.opacity(0.06))
+                        .frame(height: 4)
+                    if i < 19 { Spacer().frame(width: 2) }
                 }
             }
-            Text("Overall Health Score")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(TFTheme.textSecondary)
-            Text(scoreLabel)
-                .font(.system(size: 12, design: .rounded))
-                .foregroundStyle(scoreColor)
-                .padding(.horizontal, 14).padding(.vertical, 4)
-                .background(scoreColor.opacity(0.15))
-                .clipShape(Capsule())
+            .animation(.easeOut(duration: 0.6), value: vm.overallScore)
+
+            HStack {
+                Text("0").font(.system(size: 10)).foregroundStyle(TFTheme.textTertiary)
+                Spacer()
+                Text("50").font(.system(size: 10)).foregroundStyle(TFTheme.textTertiary)
+                Spacer()
+                Text("100").font(.system(size: 10)).foregroundStyle(TFTheme.textTertiary)
+            }
+            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
         .glassCard()
+    }
+
+    private func scaleBarColor(pct: Double) -> Color {
+        if pct < 0.4 { return TFTheme.accentRed }
+        if pct < 0.6 { return TFTheme.accentYellow }
+        if pct < 0.8 { return TFTheme.accentBlue }
+        return TFTheme.accentGreen
     }
 
     private var scoreColor: Color {
         switch vm.overallScore {
         case 80...100: return TFTheme.accentGreen
-        case 60..<80: return TFTheme.accentBlue
-        case 40..<60: return TFTheme.accentYellow
-        default: return TFTheme.accentRed
+        case 60..<80:  return TFTheme.accentBlue
+        case 40..<60:  return TFTheme.accentYellow
+        default:       return TFTheme.accentRed
         }
     }
 
     private var scoreLabel: String {
         switch vm.overallScore {
         case 80...100: return "Excellent"
-        case 60..<80: return "Good"
-        case 40..<60: return "Fair"
-        case 1..<40: return "Needs Attention"
-        default: return "Loading..."
+        case 60..<80:  return "Good"
+        case 40..<60:  return "Fair"
+        case 1..<40:   return "Needs Attention"
+        default:       return "Loading…"
+        }
+    }
+
+    private var scoreBadgeIcon: String {
+        switch vm.overallScore {
+        case 80...100: return "star.fill"
+        case 60..<80:  return "checkmark.circle.fill"
+        case 40..<60:  return "exclamationmark.circle.fill"
+        case 1..<40:   return "arrow.up.heart.fill"
+        default:       return "clock.fill"
         }
     }
 

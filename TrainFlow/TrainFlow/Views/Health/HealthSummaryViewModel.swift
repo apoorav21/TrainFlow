@@ -34,26 +34,31 @@ final class HealthSummaryViewModel: ObservableObject {
             overallScore = decoded.overallScore ?? 0
             return
         }
-
-        isLoading = true
-        defer { isLoading = false }
-
-        do {
-            struct Wrapper: Decodable { let summary: HealthSummaryData }
-            let wrapper: Wrapper = try await APIClient.shared.get("/health/ai-summary")
-            summary = wrapper.summary
-            overallScore = wrapper.summary.overallScore ?? 0
-            if let encoded = try? JSONEncoder().encode(wrapper.summary) {
-                UserDefaults.standard.set(encoded, forKey: cacheKey)
-                UserDefaults.standard.set(String(today), forKey: cacheDateKey)
-            }
-        } catch {
-            NSLog("[HealthSummaryVM] Failed to load summary: %@", error.localizedDescription)
-        }
+        await _fetch(force: false)
     }
 
     func refresh() async {
         UserDefaults.standard.removeObject(forKey: cacheDateKey)
-        await load()
+        UserDefaults.standard.removeObject(forKey: cacheKey)
+        await _fetch(force: true)
+    }
+
+    private func _fetch(force: Bool) async {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            struct Wrapper: Decodable { let summary: HealthSummaryData }
+            let queryItems = force ? [URLQueryItem(name: "force", value: "true")] : []
+            let wrapper: Wrapper = try await APIClient.shared.get("/health/ai-summary", queryItems: queryItems)
+            summary = wrapper.summary
+            overallScore = wrapper.summary.overallScore ?? 0
+            if let encoded = try? JSONEncoder().encode(wrapper.summary) {
+                let today = ISO8601DateFormatter().string(from: Date()).prefix(10)
+                UserDefaults.standard.set(encoded, forKey: cacheKey)
+                UserDefaults.standard.set(String(today), forKey: cacheDateKey)
+            }
+        } catch {
+            NSLog("[HealthSummaryVM] Failed to fetch summary: %@", error.localizedDescription)
+        }
     }
 }

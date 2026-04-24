@@ -115,11 +115,30 @@ extension PhoneSessionManager: WCSessionDelegate {
         if let payload = message["workout_complete"] as? [String: Any] {
             handleWorkoutComplete(payload)
         }
+        if message["request_today_workout"] as? Bool == true {
+            Task { await self.pushTodayWorkoutToWatch() }
+        }
     }
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         if let payload = applicationContext["workout_complete"] as? [String: Any] {
             handleWorkoutComplete(payload)
+        }
+    }
+
+    // Fetch today's workout from the API and push it to the Watch
+    func pushTodayWorkoutToWatch() async {
+        guard WCSession.isSupported() else { return }
+        do {
+            guard let plan = try await TrainingService.shared.fetchActivePlan() else { return }
+            let days = try await TrainingService.shared.fetchWorkoutDays(planId: plan.id)
+            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+            let todayStr = f.string(from: Date())
+            if let today = days.first(where: { $0.scheduledDate == todayStr }) {
+                sendTodayWorkout(today)
+            }
+        } catch {
+            NSLog("[PhoneSessionManager] pushTodayWorkoutToWatch failed: %@", error.localizedDescription)
         }
     }
 }

@@ -26,13 +26,22 @@ def handler(event, context):
         today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
         cache_sk = f'AI_SUMMARY#{today}'
 
-        # Check cache
+        qsp = event.get('queryStringParameters') or {}
+        force_refresh = qsp.get('force', '').lower() == 'true'
+
         dynamodb = boto3.resource('dynamodb')
         table = dynamodb.Table(HEALTH_TABLE)
-        cached_resp = table.get_item(Key={'userId': user_id, 'date': cache_sk})
-        cached = cached_resp.get('Item')
-        if cached and cached.get('summary'):
-            return ok({'summary': from_decimal(cached['summary'])})
+
+        if not force_refresh:
+            # Check cache
+            cached_resp = table.get_item(Key={'userId': user_id, 'date': cache_sk})
+            cached = cached_resp.get('Item')
+            if cached and cached.get('summary'):
+                return ok({'summary': from_decimal(cached['summary'])})
+        else:
+            # Bust the DynamoDB cache so we always regenerate
+            print(f'[health/ai-summary] Force refresh requested for {user_id}')
+            table.delete_item(Key={'userId': user_id, 'date': cache_sk})
 
         # Build context
         health_records = db.get_health_data_range(

@@ -123,10 +123,10 @@ struct WorkoutLogView: View {
                 if isLogging {
                     HStack(spacing: 10) {
                         ProgressView().tint(.white)
-                        Text("Getting AI feedback...").font(.system(.body, design: .rounded, weight: .bold)).foregroundStyle(.white)
+                        Text("Getting Coach Goggins feedback...").font(.system(.body, design: .rounded, weight: .bold)).foregroundStyle(.white)
                     }
                 } else {
-                    Text("Log Workout & Get AI Feedback")
+                    Text("Log Workout & Get Coach Feedback")
                         .font(.system(.body, design: .rounded, weight: .bold)).foregroundStyle(.white)
                 }
             }
@@ -146,7 +146,7 @@ struct WorkoutLogView: View {
             Text("Workout Logged! 🎉")
                 .font(.system(size: 26, weight: .black, design: .rounded)).foregroundStyle(TFTheme.textPrimary)
             VStack(alignment: .leading, spacing: 12) {
-                Label("AI Coach Feedback", systemImage: "brain.head.profile.fill")
+                Label("Coach Goggins Feedback", systemImage: "brain.head.profile.fill")
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(TFTheme.accentOrange)
                 Text(feedback)

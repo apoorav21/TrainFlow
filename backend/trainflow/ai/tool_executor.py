@@ -146,8 +146,16 @@ def execute_tool(tool_name: str, tool_input: dict, user_id: str) -> dict:
 
         plan_id = str(_uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
-        total_weeks = int(plan_data['totalWeeks'])
+        total_weeks = min(int(plan_data['totalWeeks']), 8)  # hard cap — generator limit
         days_per_week = int(plan_data['daysPerWeek'])
+
+        # fitnessLevel: prefer value passed in plan_data (from AI conversation),
+        # fall back to whatever is already stored on the user profile
+        user_profile = db.get_user(user_id) or {}
+        fitness_level = (
+            plan_data.get('fitnessLevel', '').strip()
+            or user_profile.get('fitnessLevel', '').strip()
+        )
 
         plan_item = {
             'userId': user_id,
@@ -160,6 +168,7 @@ def execute_tool(tool_name: str, tool_input: dict, user_id: str) -> dict:
             'daysPerWeek': days_per_week,
             'currentWeek': 1,
             'isActive': 'true',
+            'fitnessLevel': fitness_level,
             'createdAt': now,
             'updatedAt': now,
         }
@@ -178,12 +187,15 @@ def execute_tool(tool_name: str, tool_input: dict, user_id: str) -> dict:
         # Invoke tf-plan-generate async — returns immediately, schedule is built in background
         _invoke_plan_generate_async(plan_id, user_id, plan_data, user_context)
 
-        # Mark onboarding complete
-        db.update_user(user_id, {
+        # Mark onboarding complete and persist fitnessLevel back to profile
+        profile_updates: dict = {
             'onboardingComplete': True,
             'activePlanId': plan_id,
             'updatedAt': now,
-        })
+        }
+        if fitness_level:
+            profile_updates['fitnessLevel'] = fitness_level
+        db.update_user(user_id, profile_updates)
 
         return {
             'success': True,

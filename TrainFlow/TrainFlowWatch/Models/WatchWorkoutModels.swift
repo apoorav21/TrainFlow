@@ -154,13 +154,16 @@ struct WatchWorkoutDay: Identifiable, Codable {
 
     var workoutColor: Color {
         let t = type.lowercased()
+        if t.contains("interval") || t.contains("speed") { return Color(red: 1.0, green: 0.35, blue: 0.40) }
+        if t.contains("tempo") { return Color(red: 1.0, green: 0.82, blue: 0.30) }
+        if t.contains("long") { return Color(red: 1.0, green: 0.55, blue: 0.20) }
         if t.contains("strength") { return Color(red: 0.65, green: 0.35, blue: 1.0) }
         if t.contains("cross") || t.contains("cycl") { return Color(red: 0.25, green: 0.60, blue: 1.0) }
-        if t.contains("recover") || t.contains("easy") { return Color(red: 0.30, green: 0.85, blue: 0.55) }
-        if t.contains("long") { return .orange }
-        if t.contains("tempo") { return Color(red: 1.0, green: 0.82, blue: 0.30) }
-        if t.contains("interval") || t.contains("speed") { return .red }
-        return .orange
+        if t.contains("swim") { return Color(red: 0.30, green: 0.80, blue: 0.95) }
+        if t.contains("recover") || t.contains("rest") { return Color(red: 0.30, green: 0.80, blue: 0.95) }
+        if t.contains("easy") { return Color(red: 0.30, green: 0.85, blue: 0.55) }
+        if t.contains("race") { return Color(red: 1.0, green: 0.55, blue: 0.20) }
+        return Color(red: 0.30, green: 0.85, blue: 0.55) // default: green (easy run)
     }
 }
 

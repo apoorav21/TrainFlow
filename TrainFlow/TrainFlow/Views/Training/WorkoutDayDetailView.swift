@@ -215,10 +215,10 @@ struct WorkoutDayDetailView: View {
                     .foregroundStyle(TFTheme.accentPurple)
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text("AI Coach Note")
+                Text("Coach Goggins Note")
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(TFTheme.accentPurple)
-                Text("Connect AI Coach to get personalized insights, pacing strategy, and real-time adjustments for this workout.")
+                Text("Connect Coach Goggins to get personalized insights, pacing strategy, and real-time adjustments for this workout.")
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(TFTheme.textSecondary)
                     .lineSpacing(3)

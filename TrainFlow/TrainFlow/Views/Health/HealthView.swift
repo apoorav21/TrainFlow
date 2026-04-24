@@ -30,6 +30,8 @@ struct HealthView: View {
             .navigationBarHidden(true)
             .task {
                 await hk.requestAuthorization()
+                // Sync health to backend first so the AI summary has fresh data
+                await HealthSyncService.shared.syncNow()
                 await summaryVM.load()
             }
         }
@@ -51,6 +53,8 @@ struct HealthView: View {
                 Task {
                     isRefreshing = true
                     await hk.fetchAll()
+                    await HealthSyncService.shared.syncNow()
+                    await summaryVM.refresh()
                     isRefreshing = false
                 }
             } label: {

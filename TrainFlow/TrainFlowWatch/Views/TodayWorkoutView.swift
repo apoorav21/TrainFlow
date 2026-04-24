@@ -37,9 +37,20 @@ struct TodayWorkoutView: View {
 
     private var noPlanView: some View {
         VStack(spacing: 10) {
-            Image(systemName: "figure.run.circle").font(.system(size: 32)).foregroundStyle(.orange)
-            Text("No Plan").font(.headline)
-            Text("Create a plan on your iPhone").font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Image(systemName: "iphone.and.arrow.forward").font(.system(size: 32)).foregroundStyle(.orange)
+            Text("Not Synced").font(.headline)
+            Text("Open the TrainFlow app on your iPhone to sync today's workout.").font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Button(action: { manager.requestTodayWorkoutFromPhone() }) {
+                Label("Sync Now", systemImage: "arrow.clockwise")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color.orange)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
         }
         .padding(.top, 16)
     }

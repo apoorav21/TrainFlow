@@ -67,17 +67,31 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
     // MARK: - Load Today's Workout from UserDefaults (synced from phone)
     func loadTodayWorkout() {
         isLoadingPlan = true
-        // Check UserDefaults cache first
+        let todayStr = DateFormatter.yyyyMMdd.string(from: Date())
+
+        // Only use UserDefaults cache if it is for today — stale data from previous days is ignored
         if let data = UserDefaults.standard.data(forKey: "watch_today_workout"),
-           let day = try? JSONDecoder().decode(WatchWorkoutDay.self, from: data) {
+           let day = try? JSONDecoder().decode(WatchWorkoutDay.self, from: data),
+           day.scheduledDate == todayStr {
             todayWorkout = day
         }
-        // Also pull the latest app context the phone has sent (persists across launches)
+
+        // Always prefer the latest context pushed from the phone (overrides any cache)
         if WCSession.isSupported() {
             let context = WCSession.default.receivedApplicationContext
             if !context.isEmpty { applyWorkoutData(context) }
         }
         isLoadingPlan = false
+    }
+
+    // MARK: - Request today's workout from phone
+    func requestTodayWorkoutFromPhone() {
+        guard WCSession.isSupported(),
+              WCSession.default.activationState == .activated else { return }
+        let message: [String: Any] = ["request_today_workout": true]
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage(message, replyHandler: nil)
+        }
     }
 
     // MARK: - Apply incoming workout data from phone

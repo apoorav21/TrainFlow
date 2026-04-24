@@ -171,6 +171,10 @@ TOOLS = [
                                 "type": "integer",
                                 "description": "Number of training days per week (rest days fill the remainder).",
                             },
+                            "fitnessLevel": {
+                                "type": "string",
+                                "description": "User's current fitness level, e.g. 'beginner', 'intermediate', 'advanced', 'elite'.",
+                            },
                         },
                         "required": ["planName", "goalType", "startDate", "endDate", "totalWeeks", "daysPerWeek"],
                     },

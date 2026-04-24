@@ -33,11 +33,15 @@ struct TrainFlowApp: App {
                 NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
             ) { _ in
                 HealthSyncService.shared.syncIfNeeded()
+                if AuthService.shared.isSignedIn {
+                    Task { await PhoneSessionManager.shared.pushTodayWorkoutToWatch() }
+                }
             }
             .task {
                 if auth.isSignedIn {
                     HealthSyncService.shared.syncIfNeeded()
                     await LocationService.shared.requestLocationAndUpdate()
+                    await PhoneSessionManager.shared.pushTodayWorkoutToWatch()
                 }
             }
         }

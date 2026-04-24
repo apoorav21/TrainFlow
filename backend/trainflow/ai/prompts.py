@@ -54,27 +54,60 @@ def build_system_prompt(context: dict) -> str:
     health_records = context.get('recentHealth', [])
     health_str = ''
     if health_records:
-        hrv_values = [r['hrv'] for r in health_records if r.get('hrv')]
-        rhr_values = [r['restingHR'] for r in health_records if r.get('restingHR')]
+        hrv_values  = [r['hrv']        for r in health_records if r.get('hrv')]
+        rhr_values  = [r['restingHR']  for r in health_records if r.get('restingHR')]
+        steps_values = [r['steps']     for r in health_records if r.get('steps')]
+        vo2_values  = [r['vo2max']     for r in health_records if r.get('vo2max')]
+        ex_values   = [r['exerciseMinutes'] for r in health_records if r.get('exerciseMinutes')]
 
-        avg_hrv = sum(hrv_values) / len(hrv_values) if hrv_values else None
-        avg_rhr = sum(rhr_values) / len(rhr_values) if rhr_values else None
+        avg_hrv   = sum(hrv_values)  / len(hrv_values)  if hrv_values  else None
+        avg_rhr   = sum(rhr_values)  / len(rhr_values)  if rhr_values  else None
+        avg_steps = sum(steps_values)/ len(steps_values)if steps_values else None
+        latest_vo2 = vo2_values[-1]  if vo2_values  else None
+        avg_ex    = sum(ex_values)   / len(ex_values)   if ex_values   else None
 
         parts = []
         if avg_rhr is not None:
-            parts.append(f'Avg resting HR {avg_rhr:.0f} bpm')
+            parts.append(f'avg resting HR {avg_rhr:.0f} bpm')
         if avg_hrv is not None:
-            parts.append(f'Avg HRV {avg_hrv:.1f} ms')
+            parts.append(f'avg HRV {avg_hrv:.1f} ms')
+        if avg_steps is not None:
+            parts.append(f'avg {avg_steps:,.0f} steps/day')
+        if avg_ex is not None:
+            parts.append(f'avg {avg_ex:.0f} min exercise/day')
+        if latest_vo2 is not None:
+            parts.append(f'VO₂ max {latest_vo2:.1f} ml/kg/min')
 
         if parts:
             health_str = f"Last 7 days health: {', '.join(parts)}."
 
-        # Last night's sleep from the most recent record
+        # Last night's sleep — full stage breakdown
         latest = health_records[-1] if health_records else {}
-        sleep_data = latest.get('sleepData', {})
+        sleep_data = latest.get('sleepData') or {}
         if sleep_data.get('totalMinutes'):
-            sleep_hrs = sleep_data['totalMinutes'] / 60
-            health_str += f' Last night sleep: {sleep_hrs:.1f} hrs.'
+            total_hrs  = sleep_data['totalMinutes'] / 60
+            deep_mins  = sleep_data.get('deepMinutes')
+            rem_mins   = sleep_data.get('remMinutes')
+            core_mins  = sleep_data.get('coreMinutes')
+            awake_mins = sleep_data.get('awakeMinutes')
+            rr         = sleep_data.get('respiratoryRate')
+            spo2       = sleep_data.get('bloodOxygen')
+
+            sleep_parts = [f'{total_hrs:.1f} hrs total']
+            if deep_mins is not None:
+                sleep_parts.append(f'{deep_mins:.0f} min deep')
+            if rem_mins is not None:
+                sleep_parts.append(f'{rem_mins:.0f} min REM')
+            if core_mins is not None:
+                sleep_parts.append(f'{core_mins:.0f} min core')
+            if awake_mins is not None:
+                sleep_parts.append(f'{awake_mins:.0f} min awake')
+            if rr is not None:
+                sleep_parts.append(f'resp rate {rr:.1f}/min')
+            if spo2 is not None:
+                sleep_parts.append(f'SpO₂ {spo2:.0f}%')
+
+            health_str += f" Last night sleep: {', '.join(sleep_parts)}."
 
     # ------------------------------------------------------------------
     # Recent workouts summary (TrainFlow logs + HealthKit synced workouts)
@@ -167,9 +200,14 @@ As they share information, save it progressively with update_user_profile.
 Once you have everything, call create_training_plan with the COMPLETE plan object.
 
 When calling create_training_plan, provide:
-  - plan: { planName, goalType, startDate (MUST be today's exact date — do NOT use start of week), endDate, totalWeeks, daysPerWeek }
+  - plan: { planName, goalType, startDate (MUST be today's exact date — do NOT use start of week), endDate, totalWeeks, daysPerWeek, fitnessLevel (e.g. 'beginner', 'intermediate', 'advanced', 'elite') }
   - userContext: a concise summary of everything about the user (fitness level, goal,
     target race/time, injuries, weekly volume, preferences)
+
+HARD LIMIT: totalWeeks MUST be 8 or less. If the user asks for a longer plan, tell them
+straight — no coddling: "Plans are capped at 8 weeks. We're going to hammer these first
+8 weeks, build the foundation, and then build the next block from there. That's how
+champions are made." Then set totalWeeks to 8 and endDate to startDate + 56 days.
 
 Do NOT generate workoutDays yourself — the schedule is generated automatically.
 Just pass the plan metadata and user context. Be thorough in userContext so the

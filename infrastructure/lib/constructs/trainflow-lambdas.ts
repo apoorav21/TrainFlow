@@ -74,8 +74,8 @@ export class TrainFlowLambdas extends Construct {
       TF_CHAT_TABLE: props.chatTable.tableName,
       // OpenAI model IDs — override via env to switch model without redeploying
       OPENAI_MODEL: 'gpt-5.4',
-      OPENAI_SECONDARY_MODEL: 'gpt-5.4',
-      OPENAI_PLAN_MODEL: 'gpt-5.4',
+      OPENAI_SECONDARY_MODEL: 'gpt-5.4-mini',
+      OPENAI_PLAN_MODEL: 'gpt-5.4-nano',
       // OPENAI_API_KEY must be set manually on the tf-chat-message Lambda
       // after deployment: aws lambda update-function-configuration \
       //   --function-name tf-chat-message \
