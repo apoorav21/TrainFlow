@@ -23,6 +23,7 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
     @Published var phaseElapsedSeconds: Int = 0
     @Published var effortRating: Int = 5
     @Published var workoutNotes: String = ""
+    var phaseHRSamples: [[Double]] = []
     private var phaseTimer: Timer?
 
     var currentPhase: WorkoutPhaseItem? {
@@ -114,6 +115,7 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
         }
         currentPhaseIndex = 0
         phaseElapsedSeconds = 0
+        phaseHRSamples = Array(repeating: [], count: max(1, workoutPhases.count))
 
         let startDate = Date()
         session = WatchWorkoutSession(startTime: startDate)
@@ -220,6 +222,12 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
         if session.currentPace > 0 { payload["avgPace"] = session.currentPace }
         payload["effortRating"] = effortRating
         if !workoutNotes.isEmpty { payload["notes"] = workoutNotes }
+        let sectionHRs: [[String: Any]] = workoutPhases.enumerated().compactMap { i, phase in
+            let samples = phaseHRSamples.indices.contains(i) ? phaseHRSamples[i] : []
+            guard !samples.isEmpty else { return nil }
+            return ["phase": phase.label, "avgHR": Int((samples.reduce(0, +) / Double(samples.count)).rounded())]
+        }
+        if !sectionHRs.isEmpty { payload["sectionHeartRates"] = sectionHRs }
 
         let message: [String: Any] = ["workout_complete": payload]
         if WCSession.default.isReachable {
@@ -247,6 +255,7 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
         phaseElapsedSeconds = 0
         effortRating = 5
         workoutNotes = ""
+        phaseHRSamples = []
         phaseTimer?.invalidate()
         phaseTimer = nil
     }
@@ -327,6 +336,10 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
                 self.session.heartRateSamples.append(hr)
                 let total = self.session.heartRateSamples.reduce(0, +)
                 self.session.avgHeartRate = total / Double(self.session.heartRateSamples.count)
+                let idx = self.currentPhaseIndex
+                if self.phaseHRSamples.indices.contains(idx) {
+                    self.phaseHRSamples[idx].append(hr)
+                }
                 self.session.calories += Double.random(in: 4...8)
                 let distIncrement = (hr / 140.0) * 0.003
                 self.session.distance += distIncrement
@@ -374,6 +387,10 @@ extension WatchWorkoutManager: HKLiveWorkoutBuilderDelegate {
                         self.session.heartRateSamples.append(hr)
                         let total = self.session.heartRateSamples.reduce(0, +)
                         self.session.avgHeartRate = total / Double(self.session.heartRateSamples.count)
+                        let idx = self.currentPhaseIndex
+                        if self.phaseHRSamples.indices.contains(idx) {
+                            self.phaseHRSamples[idx].append(hr)
+                        }
                     }
                 case HKQuantityType(.activeEnergyBurned):
                     self.session.calories = stats?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0

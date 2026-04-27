@@ -145,6 +145,11 @@ typealias RemoteWorkoutDay = TFWorkoutDay
 
 // MARK: - Workout Log
 
+struct SectionHeartRate: Codable {
+    let phase: String
+    let avgHR: Int
+}
+
 struct TFWorkoutLog: Codable {
     let planId: String?
     let workoutDayId: String?       // daySK
@@ -159,6 +164,7 @@ struct TFWorkoutLog: Codable {
     let effortRating: Int?
     let notes: String?
     let hrvPost: Int?
+    var sectionHeartRates: [SectionHeartRate]? = nil
 }
 
 // Typealias keeps WorkoutLogView's `WorkoutLogPayload` references compiling.

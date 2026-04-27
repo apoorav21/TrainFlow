@@ -79,7 +79,7 @@ struct NowMetricsPage: View {
     }
 }
 
-// MARK: - Cardio (run / walk / hike): time · distance · pace · HR
+// MARK: - Cardio (run / walk / hike): distance · time · pace · HR
 
 struct CardioMetricsView: View {
     @EnvironmentObject private var manager: WatchWorkoutManager
@@ -88,39 +88,49 @@ struct CardioMetricsView: View {
     private var targetZone: HRZone? { manager.currentPhase.flatMap { HRZone(rawValue: $0.hrZone) } }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack {
-                metricBlock(label: "TIME", value: session.formattedElapsed,
-                            size: 22, color: .orange, mono: true)
+        VStack(alignment: .leading, spacing: 4) {
+            // Hero: distance
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
+                Text(session.formattedDistance)
+                    .font(.system(size: 30, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(.green)
+                    .contentTransition(.numericText())
+                Text("km")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.secondary)
                 Spacer()
-                metricBlock(label: "DIST", value: session.formattedDistance + " km",
-                            size: 22, color: .white, mono: false, trailing: true)
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text("TIME").font(.system(size: 9, weight: .bold)).foregroundStyle(.secondary)
+                    Text(session.formattedElapsed)
+                        .font(.system(size: 16, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(.orange).contentTransition(.numericText())
+                }
             }
             Divider().opacity(0.25)
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 1) {
+            // Pace row: current pace / target pace
+            HStack(alignment: .lastTextBaseline, spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
                     Text("PACE").font(.system(size: 9, weight: .bold)).foregroundStyle(.secondary)
                     Text(session.formattedPace)
-                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .font(.system(size: 20, weight: .heavy, design: .monospaced))
                         .foregroundStyle(.cyan).contentTransition(.numericText())
                 }
-                Spacer()
                 if let t = targetPace {
-                    VStack(alignment: .trailing, spacing: 1) {
-                        Text("TARGET").font(.system(size: 9, weight: .bold)).foregroundStyle(.secondary)
-                        Text(t).font(.system(size: 14, weight: .semibold, design: .monospaced)).foregroundStyle(.cyan.opacity(0.6))
-                    }
+                    Text(" / \(t)")
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(.cyan.opacity(0.55))
+                        .padding(.bottom, 2)
                 }
+                Spacer()
             }
-            hrRow(targetZone: targetZone)
             Divider().opacity(0.25)
-            CalPhaseRow()
+            hrRow(targetZone: targetZone)
         }
-        .padding(.horizontal, 6).padding(.vertical, 4)
+        .padding(.horizontal, 6).padding(.vertical, 2)
     }
 }
 
-// MARK: - Cycling: time · distance · speed · HR
+// MARK: - Cycling: distance · time · speed · HR
 
 struct CyclingMetricsView: View {
     @EnvironmentObject private var manager: WatchWorkoutManager
@@ -128,37 +138,49 @@ struct CyclingMetricsView: View {
     private var targetZone: HRZone? { manager.currentPhase.flatMap { HRZone(rawValue: $0.hrZone) } }
 
     private var speedKph: String {
-        guard session.currentPace > 0 else { return "--" }
+        guard session.currentPace > 0 else { return "--.-" }
         return String(format: "%.1f", 60.0 / session.currentPace)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack {
-                metricBlock(label: "TIME", value: session.formattedElapsed,
-                            size: 22, color: .orange, mono: true)
+        VStack(alignment: .leading, spacing: 4) {
+            // Hero: distance
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
+                Text(session.formattedDistance)
+                    .font(.system(size: 30, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(.blue)
+                    .contentTransition(.numericText())
+                Text("km")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.secondary)
                 Spacer()
-                metricBlock(label: "DIST", value: session.formattedDistance + " km",
-                            size: 22, color: .white, mono: false, trailing: true)
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text("TIME").font(.system(size: 9, weight: .bold)).foregroundStyle(.secondary)
+                    Text(session.formattedElapsed)
+                        .font(.system(size: 16, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(.orange).contentTransition(.numericText())
+                }
             }
             Divider().opacity(0.25)
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 1) {
+            // Speed row
+            HStack(alignment: .lastTextBaseline, spacing: 3) {
+                VStack(alignment: .leading, spacing: 0) {
                     Text("SPEED").font(.system(size: 9, weight: .bold)).foregroundStyle(.secondary)
                     HStack(alignment: .lastTextBaseline, spacing: 3) {
                         Text(speedKph)
-                            .font(.system(size: 18, weight: .bold, design: .monospaced))
+                            .font(.system(size: 20, weight: .heavy, design: .monospaced))
                             .foregroundStyle(.cyan).contentTransition(.numericText())
-                        Text("km/h").font(.system(size: 10)).foregroundStyle(.secondary)
+                        Text("km/h")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
-                metricBlock(label: "CAL", value: "\(Int(session.calories))",
-                            size: 14, color: .yellow, mono: false, trailing: true)
             }
+            Divider().opacity(0.25)
             hrRow(targetZone: targetZone)
         }
-        .padding(.horizontal, 6).padding(.vertical, 4)
+        .padding(.horizontal, 6).padding(.vertical, 2)
     }
 }
 
@@ -226,7 +248,7 @@ struct StrengthMetricsView: View {
                 }
             }
         }
-        .padding(.horizontal, 6).padding(.vertical, 4)
+        .padding(.horizontal, 6).padding(.vertical, 2)
     }
 }
 
@@ -251,7 +273,7 @@ struct GeneralMetricsView: View {
             Divider().opacity(0.25)
             CalPhaseRow()
         }
-        .padding(.horizontal, 6).padding(.vertical, 4)
+        .padding(.horizontal, 6).padding(.vertical, 2)
     }
 }
 

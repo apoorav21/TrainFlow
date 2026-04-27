@@ -62,7 +62,7 @@ def handler(event, context):
             'workoutDayId', 'planId', 'scheduledDate',
             'actualDistance', 'actualDurationMin',
             'avgHeartRate', 'peakHeartRate', 'calories', 'avgPace',
-            'effortRating', 'notes', 'hrvPost',
+            'effortRating', 'notes', 'hrvPost', 'sectionHeartRates',
         ):
             if body.get(field) is not None:
                 workout_item[field] = body[field]

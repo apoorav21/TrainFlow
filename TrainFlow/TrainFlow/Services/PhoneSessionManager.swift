@@ -42,6 +42,10 @@ final class PhoneSessionManager: NSObject, ObservableObject {
               let planId = payload["planId"] as? String else { return }
 
         Task {
+            let sectionHRs = (payload["sectionHeartRates"] as? [[String: Any]])?.compactMap { d -> SectionHeartRate? in
+                guard let phase = d["phase"] as? String, let avg = d["avgHR"] as? Int else { return nil }
+                return SectionHeartRate(phase: phase, avgHR: avg)
+            }
             let log = TFWorkoutLog(
                 planId: planId,
                 workoutDayId: planWeekDay,
@@ -55,7 +59,8 @@ final class PhoneSessionManager: NSObject, ObservableObject {
                 avgPace: payload["avgPace"] as? Double,
                 effortRating: payload["effortRating"] as? Int,
                 notes: payload["notes"] as? String ?? "Completed from Apple Watch",
-                hrvPost: nil
+                hrvPost: nil,
+                sectionHeartRates: sectionHRs
             )
 
             do {
