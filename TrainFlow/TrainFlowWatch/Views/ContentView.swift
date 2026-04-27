@@ -12,6 +12,8 @@ struct ContentView: View {
                 ActiveWorkoutView()
             case .effortRating:
                 EffortRatingView()
+            case .notes:
+                WorkoutNotesView()
             case .summary:
                 WorkoutSummaryView()
             }

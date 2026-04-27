@@ -198,7 +198,9 @@ TOOLS = [
             "description": (
                 "Modify specific workout days in the current training plan. "
                 "Use this when the user asks to change, swap, reduce, or adjust specific workouts. "
-                "Provide the updated workout day objects."
+                "To convert a rest day to a workout, you MUST set isRestDay=false AND type to the "
+                "workout type AND provide warmup/mainSet/cooldown. "
+                "Already-completed days are skipped automatically."
             ),
             "parameters": {
                 "type": "object",
@@ -209,15 +211,30 @@ TOOLS = [
                     },
                     "changes": {
                         "type": "array",
-                        "description": (
-                            "Array of workout day updates. "
-                            "Each item: { planWeekDay: string, updates: object }."
-                        ),
+                        "description": "Array of workout day updates.",
                         "items": {
                             "type": "object",
                             "properties": {
-                                "planWeekDay": {"type": "string"},
-                                "updates": {"type": "object"},
+                                "planWeekDay": {
+                                    "type": "string",
+                                    "description": "The planWeekDay sort key, e.g. '{planId}#W01#D3'.",
+                                },
+                                "updates": {
+                                    "type": "object",
+                                    "description": (
+                                        "Fields to update. Use EXACT field names from the workout day schema:\n"
+                                        "  title (str) — short display name\n"
+                                        "  type (str) — 'run'|'long_run'|'tempo'|'interval'|'easy'|'recovery'|'strength'|'cross_training'|'rest'\n"
+                                        "  isRestDay (bool) — MUST be false for any workout day, true only for rest\n"
+                                        "  coachMessage (str) — 1-2 sentence coaching cue\n"
+                                        "  warmup (object) — {durationMin: int, description: str, targetPace: str, hrZone: int}\n"
+                                        "  mainSet (object) — {description: str, hrZone: int, intervals: [{type: str, durationMin: float, distanceKm: float, targetPace: str, hrZone: int, notes: str}]}\n"
+                                        "  cooldown (object) — {durationMin: int, description: str, targetPace: str, hrZone: int}\n"
+                                        "  targetDistanceKm (float) — total target distance\n"
+                                        "  estimatedDurationMin (int) — expected session length\n"
+                                        "To turn a rest day into a workout you MUST include: isRestDay=false, type, title, warmup, mainSet, cooldown, coachMessage."
+                                    ),
+                                },
                             },
                             "required": ["planWeekDay", "updates"],
                         },

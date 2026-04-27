@@ -242,11 +242,20 @@ struct AICoachView: View {
                 .animation(.easeOut(duration: 0.3), value: vm.messages.count)
                 .animation(.easeOut(duration: 0.2), value: vm.isTyping)
             }
+            .defaultScrollAnchor(.bottom)
+            .scrollDismissesKeyboard(.interactively)
             .onChange(of: vm.messages.count) { _, _ in
                 withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
             }
             .onChange(of: vm.isTyping) { _, typing in
                 if typing { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
+            }
+            .onChange(of: inputFocused) { _, focused in
+                if focused {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                    }
+                }
             }
         }
     }

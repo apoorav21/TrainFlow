@@ -256,7 +256,7 @@ enum HRZone: Int, CaseIterable {
 
 // MARK: - Workout Phase enum
 
-enum WorkoutPhase { case notStarted, active, paused, effortRating, summary }
+enum WorkoutPhase { case notStarted, active, paused, effortRating, notes, summary }
 
 // MARK: - Sample data
 

@@ -54,7 +54,7 @@ final class PhoneSessionManager: NSObject, ObservableObject {
                 calories: payload["calories"] as? Double,
                 avgPace: payload["avgPace"] as? Double,
                 effortRating: payload["effortRating"] as? Int,
-                notes: "Completed from Apple Watch",
+                notes: payload["notes"] as? String ?? "Completed from Apple Watch",
                 hrvPost: nil
             )
 

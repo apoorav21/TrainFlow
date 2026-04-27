@@ -188,8 +188,8 @@ final class DynamicTrainingViewModel: ObservableObject {
 
     func dayTypeIcon(_ combined: String) -> String {
         let t = combined.lowercased()
-        if t.contains("cross") || t.contains("cycling") { return "figure.outdoor.cycle" }
         if t.contains("strength") { return "dumbbell.fill" }
+        if t.contains("cross") || t.contains("cycling") { return "figure.outdoor.cycle" }
         if t.contains("rest") { return "moon.zzz.fill" }
         if t.contains("swim") { return "figure.pool.swim" }
         if t.contains("interval") || t.contains("speed") { return "bolt.fill" }

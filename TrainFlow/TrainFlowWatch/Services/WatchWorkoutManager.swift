@@ -22,6 +22,7 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
     @Published var currentPhaseIndex: Int = 0
     @Published var phaseElapsedSeconds: Int = 0
     @Published var effortRating: Int = 5
+    @Published var workoutNotes: String = ""
     private var phaseTimer: Timer?
 
     var currentPhase: WorkoutPhaseItem? {
@@ -98,6 +99,9 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
     func applyWorkoutData(_ context: [String: Any]) {
         guard let data = context["today_workout"] as? Data,
               let day = try? JSONDecoder().decode(WatchWorkoutDay.self, from: data) else { return }
+        // Reject stale contexts pushed on a previous day
+        let todayStr = DateFormatter.yyyyMMdd.string(from: Date())
+        guard day.scheduledDate == todayStr else { return }
         UserDefaults.standard.set(data, forKey: "watch_today_workout")
         todayWorkout = day
     }
@@ -170,16 +174,28 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - Submit Effort Rating and move to summary
+    // MARK: - Submit Effort Rating → move to notes screen
     func submitEffortRating(_ rating: Int) {
         effortRating = rating
         if let day = todayWorkout, !day.isCompleted {
             markTodayComplete()
         }
-        sendWorkoutCompleteToPhone()
         #if os(watchOS)
         WKInterfaceDevice.current().play(.success)
         #endif
+        phase = .notes
+    }
+
+    // MARK: - Submit workout notes (from dictation) → summary
+    func submitWorkoutNotes(_ notes: String) {
+        workoutNotes = notes
+        sendWorkoutCompleteToPhone()
+        phase = .summary
+    }
+
+    // MARK: - Skip notes → summary
+    func skipWorkoutNotes() {
+        sendWorkoutCompleteToPhone()
         phase = .summary
     }
 
@@ -203,6 +219,7 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
         ]
         if session.currentPace > 0 { payload["avgPace"] = session.currentPace }
         payload["effortRating"] = effortRating
+        if !workoutNotes.isEmpty { payload["notes"] = workoutNotes }
 
         let message: [String: Any] = ["workout_complete": payload]
         if WCSession.default.isReachable {
@@ -229,6 +246,7 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
         currentPhaseIndex = 0
         phaseElapsedSeconds = 0
         effortRating = 5
+        workoutNotes = ""
         phaseTimer?.invalidate()
         phaseTimer = nil
     }
@@ -378,10 +396,17 @@ extension WatchWorkoutManager: WCSessionDelegate {
                              activationDidCompleteWith activationState: WCSessionActivationState,
                              error: Error?) {
         guard activationState == .activated else { return }
+        // Apply any cached context (date-guarded inside applyWorkoutData)
         let context = session.receivedApplicationContext
-        guard !context.isEmpty else { return }
+        if !context.isEmpty {
+            Task { @MainActor in
+                WatchWorkoutManager.shared.applyWorkoutData(context)
+            }
+        }
+        // Always ask the phone for today's data on activation — covers the case where the
+        // cached context is stale (from a previous day) and the phone hasn't pushed yet
         Task { @MainActor in
-            WatchWorkoutManager.shared.applyWorkoutData(context)
+            WatchWorkoutManager.shared.requestTodayWorkoutFromPhone()
         }
     }
 
