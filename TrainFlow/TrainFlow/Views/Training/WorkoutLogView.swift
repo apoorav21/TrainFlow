@@ -166,22 +166,46 @@ struct WorkoutLogView: View {
 
     private func submitLog() {
         isLogging = true
+        let distanceKm = Double(distance)
+        let durationMin = Int(duration)
+        let avgHR = Int(heartRate)
         let log = WorkoutLogPayload(
             planId: planId,
             workoutDayId: day.id,
-            actualDistance: Double(distance),
-            actualDurationMin: Int(duration),
-            avgHeartRate: Int(heartRate),
+            workoutType: day.dayType,
+            actualDistance: distanceKm,
+            actualDurationMin: durationMin,
+            avgHeartRate: avgHR,
             effortRating: Int(effort),
             notes: notes.isEmpty ? nil : notes,
             hrvPost: Int(hrv)
         )
         Task {
             do {
-                let feedback = try await TrainingService.shared.logWorkout(planId: planId, workoutDayId: day.id, log: log)
-                aiFeedback = feedback ?? "Great work completing your workout!"
+                _ = try await TrainingService.shared.logWorkout(planId: planId, workoutDayId: day.id, log: log)
             } catch {
-                aiFeedback = "Workout saved! Keep up the great work."
+                await MainActor.run { aiFeedback = "Workout saved! Keep up the great work." }
+                isLogging = false
+                return
+            }
+
+            do {
+                let sessionData: [String: Any] = [
+                    "elapsedSeconds": (durationMin ?? 0) * 60,
+                    "avgHeartRate": Double(avgHR ?? 0),
+                    "peakHeartRate": Double(avgHR ?? 0),
+                    "calories": 0.0,
+                    "distance": distanceKm ?? 0.0,
+                    "avgPace": 0.0,
+                ]
+                let report = try await TrainingService.shared.generateWorkoutReport(
+                    planId: planId,
+                    daySK: day.id,
+                    sessionData: sessionData
+                )
+                await MainActor.run { aiFeedback = report.aiReport }
+            } catch {
+                await MainActor.run { aiFeedback = "Great work completing your workout! Your coach will review this at your next chat." }
             }
             isLogging = false
         }

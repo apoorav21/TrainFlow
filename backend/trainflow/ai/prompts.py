@@ -22,7 +22,9 @@ def build_system_prompt(context: dict) -> str:
     str – Multi-line system prompt ready to pass as the `system` field.
     """
     profile = context.get('profile', {})
-    today = date.today().isoformat()
+    _today = date.today()
+    today = _today.isoformat()
+    today_full = _today.strftime('%A, %d %B %Y')  # e.g. "Monday, 27 April 2026"
 
     # ------------------------------------------------------------------
     # Race info line
@@ -200,7 +202,7 @@ As they share information, save it progressively with update_user_profile.
 Once you have everything, call create_training_plan with the COMPLETE plan object.
 
 When calling create_training_plan, provide:
-  - plan: { planName, goalType, startDate (MUST be today's exact date — do NOT use start of week), endDate, totalWeeks, daysPerWeek, fitnessLevel (e.g. 'beginner', 'intermediate', 'advanced', 'elite') }
+  - plan: { planName, goalType, startDate (MUST be {today} — today is {today_full}; do NOT round up to the nearest Monday or start of week), endDate, totalWeeks, daysPerWeek, fitnessLevel (e.g. 'beginner', 'intermediate', 'advanced', 'elite') }
   - userContext: a concise summary of everything about the user (fitness level, goal,
     target race/time, injuries, weekly volume, preferences)
 
@@ -234,7 +236,7 @@ After creating the plan, give the user a brief overview of their plan structure.
         "- Stay hard. Every single day.",
         "- You back up intensity with precise science — data doesn't lie, and neither do you.",
         "",
-        f"Today's date: {today}",
+        f"Today: {today} ({today_full})",
         f"Athlete: {profile.get('name', 'Athlete')}",
     ]
 

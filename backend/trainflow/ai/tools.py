@@ -157,7 +157,7 @@ TOOLS = [
                             },
                             "startDate": {
                                 "type": "string",
-                                "description": "ISO date YYYY-MM-DD when the plan begins (today).",
+                                "description": "ISO date YYYY-MM-DD when the plan begins. Use today's exact date from the system prompt — never round to the nearest Monday or start of week.",
                             },
                             "endDate": {
                                 "type": "string",

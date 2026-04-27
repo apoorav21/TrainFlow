@@ -18,34 +18,29 @@ final class DynamicTrainingViewModel: ObservableObject {
     @Published var selectedActivity: WorkoutActivity?
 
     // Calendar weeks: each entry is 7 slots Mon(0)…Sun(6), nil = no workout that day
+    // Groups by plan weekNumber (D1–D7) so "Wk 1" in app == "Week 1" on watch.
     var calendarWeeks: [[RemoteWorkoutDay?]] {
         guard !workoutDays.isEmpty else { return [] }
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-        let cal = Calendar.current
-
-        func monday(of date: Date) -> Date {
-            let wd = cal.component(.weekday, from: date) // 1=Sun…7=Sat
-            let sub = wd == 1 ? 6 : wd - 2
-            return cal.startOfDay(for: cal.date(byAdding: .day, value: -sub, to: date)!)
-        }
-
-        // Collect unique Monday dates across all workout days
-        var mondaySet = Set<Date>()
+        var weekMap: [Int: [Int: RemoteWorkoutDay]] = [:]
         for day in workoutDays {
-            if let d = f.date(from: day.scheduledDate) { mondaySet.insert(monday(of: d)) }
+            weekMap[day.weekNumber, default: [:]][day.dayNumber] = day
         }
-
-        // Build lookup: dateStr → workout day
-        let lookup = Dictionary(uniqueKeysWithValues: workoutDays.compactMap { d -> (String, RemoteWorkoutDay)? in
-            (d.scheduledDate, d)
-        })
-
-        return mondaySet.sorted().map { mon in
-            (0..<7).map { offset -> RemoteWorkoutDay? in
-                guard let slotDate = cal.date(byAdding: .day, value: offset, to: mon) else { return nil }
-                return lookup[f.string(from: slotDate)]
-            }
+        return weekMap.keys.sorted().map { weekNum in
+            let dayMap = weekMap[weekNum] ?? [:]
+            return (1...7).map { dayMap[$0] }
         }
+    }
+
+    // Day-of-week abbreviations starting from plan D1's actual weekday.
+    var planDayHeaders: [String] {
+        let dayNames = ["S","M","T","W","T","F","S"] // Apple: Sun=1…Sat=7, 0-based here
+        guard let first = workoutDays.min(by: { $0.scheduledDate < $1.scheduledDate }) else {
+            return ["M","T","W","T","F","S","S"]
+        }
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+        guard let d = f.date(from: first.scheduledDate) else { return ["M","T","W","T","F","S","S"] }
+        let wd = Calendar.current.component(.weekday, from: d) - 1 // 0-based, 0=Sun
+        return (0..<7).map { dayNames[(wd + $0) % 7] }
     }
 
     // Kept for compatibility — used only by todayWorkout / other non-grid code
@@ -262,6 +257,7 @@ struct DynamicTrainingView: View {
             .sheet(item: $vm.logDay) { day in
                 WorkoutLogView(day: day, planId: vm.plan?.id ?? "") { feedback in
                     vm.markComplete(day)
+                    Task { await vm.load() }
                 }
             }
             .sheet(isPresented: $vm.showAdaptChat) {
@@ -443,7 +439,7 @@ struct DynamicTrainingView: View {
         }
     }
 
-    private let calendarDayHeaders = ["M","T","W","T","F","S","S"]
+    private var calendarDayHeaders: [String] { vm.planDayHeaders }
 
     private var weekGrid: some View {
         VStack(spacing: 12) {
@@ -625,13 +621,18 @@ struct RemoteDayCell: View {
 // MARK: - Workout Day Detail (Remote)
 struct WorkoutDayRemoteDetailView: View {
     let day: RemoteWorkoutDay
-    let vm: DynamicTrainingViewModel
+    @ObservedObject var vm: DynamicTrainingViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var showLogView = false
     @State private var aiReport: String?
     @State private var isGeneratingReport = false
 
-    private var accentColor: Color { vm.dayTypeColor("\(day.type) \(day.dayType)") }
+    // Always read from vm.workoutDays so report/completion updates propagate live
+    private var liveDay: RemoteWorkoutDay {
+        vm.workoutDays.first(where: { $0.id == day.id }) ?? day
+    }
+
+    private var accentColor: Color { vm.dayTypeColor("\(liveDay.type) \(liveDay.dayType)") }
 
     var body: some View {
         NavigationStack {
@@ -649,13 +650,13 @@ struct WorkoutDayRemoteDetailView: View {
                         if let msg = day.coachMessage {
                             coachMessageCard(msg)
                         }
-                        if !day.isCompleted {
+                        if !liveDay.isCompleted {
                             logButton
                         } else {
                             completedBadge
                             if isGeneratingReport {
                                 reportLoadingCard
-                            } else if let report = aiReport ?? day.aiReport {
+                            } else if let report = liveDay.aiReport ?? aiReport {
                                 aiReportCard(report)
                             }
                         }
@@ -673,14 +674,14 @@ struct WorkoutDayRemoteDetailView: View {
                 }
             }
             .onAppear {
-                aiReport = day.aiReport
-                if day.isCompleted && day.aiReport == nil {
+                aiReport = liveDay.aiReport
+                if liveDay.isCompleted && liveDay.aiReport == nil {
                     isGeneratingReport = PhoneSessionManager.shared.lastWorkoutReport == nil
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .workoutReportReady)) { note in
                 guard let report = note.userInfo?["report"] as? WorkoutReport,
-                      report.planWeekDay == day.planWeekDay else { return }
+                      report.planWeekDay == liveDay.planWeekDay else { return }
                 withAnimation { isGeneratingReport = false; aiReport = report.aiReport }
                 Task { await vm.load() }
             }
@@ -907,6 +908,7 @@ struct WorkoutDayRemoteDetailView: View {
         .sheet(isPresented: $showLogView) {
             WorkoutLogView(day: day, planId: vm.plan?.id ?? "") { _ in
                 vm.markComplete(day)
+                Task { await vm.load() }
                 dismiss()
             }
         }

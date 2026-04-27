@@ -53,7 +53,9 @@ private enum WatchWorkoutCategory {
 
     init(_ type: String) {
         let t = type.lowercased()
-        if t.contains("run") || t.contains("walk") || t.contains("hik") { self = .cardio }
+        if t.contains("run") || t.contains("walk") || t.contains("hik")
+            || t.contains("tempo") || t.contains("interval") || t.contains("easy")
+            || t.contains("recovery") || t.contains("long") { self = .cardio }
         else if t.contains("cycl") || t.contains("bike") || t.contains("elliptical") { self = .cycling }
         else if t.contains("strength") || t.contains("hiit") || t.contains("functional") || t.contains("cross") { self = .strength }
         else { self = .other }
