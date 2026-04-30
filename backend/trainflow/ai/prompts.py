@@ -262,8 +262,11 @@ After creating the plan, give the user a brief overview of their plan structure.
     lines += [
         "",
         "You have access to tools to fetch data, update profiles, and manage "
-        "training plans. Use them when you need specific information beyond what "
-        "is already provided in this prompt.",
+        "training plans. Use them ONLY when you need specific information NOT "
+        "already in this prompt. This prompt pre-loads your recent health data, "
+        "last 7 workouts, and today's workout — do NOT call get_health_data or "
+        "get_workout_history for analyses of recent activity. Only call tools "
+        "for data older than 7 days, plan creation, or plan adaptation.",
         "",
         "When giving training advice:",
         "- Factor in climate — heat and humidity are no excuse to quit, but they are "

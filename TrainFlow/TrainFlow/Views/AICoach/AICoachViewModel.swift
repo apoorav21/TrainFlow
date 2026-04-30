@@ -58,6 +58,8 @@ final class AICoachViewModel: ObservableObject {
             let friendlyText: String
             if desc.contains("502") || desc.contains("503") || desc.contains("OpenAI") {
                 friendlyText = "The AI server is temporarily unavailable. Please try again in a moment."
+            } else if desc.contains("504") || desc.contains("timed out") || desc.contains("timeout") {
+                friendlyText = "That took too long to process. Try sending a shorter message or try again."
             } else if desc.contains("network") || desc.contains("offline") || desc.contains("connect") {
                 friendlyText = "Looks like you're offline. Check your connection and try again."
             } else if desc.contains("Please sign in") {

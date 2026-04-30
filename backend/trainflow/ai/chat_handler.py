@@ -55,7 +55,7 @@ def handle_chat(user_id: str, user_message: str) -> dict:
         # 2. Assemble message history (OpenAI format)
         #    Order: [summary injection] → [last 20 messages] → [new user msg]
         # ----------------------------------------------------------------
-        recent_msgs = db.get_chat_messages(user_id, limit=20)  # newest-first
+        recent_msgs = db.get_chat_messages(user_id, limit=12)  # newest-first
         summary_record = db.get_chat_summary(user_id)
 
         messages: list = []
@@ -99,7 +99,7 @@ def handle_chat(user_id: str, user_message: str) -> dict:
                 messages=messages,
                 system=system_prompt,
                 tools=TOOLS,
-                max_tokens=2000,
+                max_tokens=4096,
             )
 
             choice = response.choices[0]
