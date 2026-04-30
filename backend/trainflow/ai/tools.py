@@ -197,9 +197,19 @@ TOOLS = [
             "name": "adapt_training_plan",
             "description": (
                 "Modify specific workout days in the current training plan. "
-                "Use this when the user asks to change, swap, reduce, or adjust specific workouts. "
-                "To convert a rest day to a workout, you MUST set isRestDay=false AND type to the "
-                "workout type AND provide warmup/mainSet/cooldown. "
+                "Use this when the user asks to change, swap, move, reduce, or adjust workouts.\n\n"
+                "FULL SWAP (moving a workout to a different day, replacing one workout with another):\n"
+                "  Provide ALL fields: title, type, isRestDay=false, distance, duration, targetPace, "
+                "targetHRZone, warmup, mainSet, cooldown, coachMessage. "
+                "When you move workout A to day X, put all of workout A's fields into day X's updates.\n\n"
+                "CONVERT TO REST DAY:\n"
+                "  Set isRestDay=true, type='rest', title='Rest Day', coachMessage. "
+                "All workout fields (warmup, mainSet, cooldown, distance, etc.) are automatically removed.\n\n"
+                "CONVERT REST DAY TO WORKOUT:\n"
+                "  Set isRestDay=false AND provide: type, title, warmup, mainSet, cooldown, "
+                "distance, duration, targetPace, targetHRZone, coachMessage.\n\n"
+                "PARTIAL UPDATE (only changing a coach message, target pace, etc.):\n"
+                "  Provide only the fields being changed.\n\n"
                 "Already-completed days are skipped automatically."
             ),
             "parameters": {
@@ -222,17 +232,18 @@ TOOLS = [
                                 "updates": {
                                     "type": "object",
                                     "description": (
-                                        "Fields to update. Use EXACT field names from the workout day schema:\n"
+                                        "Fields to update. Use EXACT field names:\n"
                                         "  title (str) — short display name\n"
                                         "  type (str) — 'run'|'long_run'|'tempo'|'interval'|'easy'|'recovery'|'strength'|'cross_training'|'rest'\n"
-                                        "  isRestDay (bool) — MUST be false for any workout day, true only for rest\n"
+                                        "  isRestDay (bool) — false for workout days, true for rest\n"
+                                        "  distance (str) — e.g. '10 km'\n"
+                                        "  duration (str) — e.g. '1:12' or '45 min'\n"
+                                        "  targetPace (str) — e.g. '5:30/km'\n"
+                                        "  targetHRZone (int) — 1-5\n"
                                         "  coachMessage (str) — 1-2 sentence coaching cue\n"
-                                        "  warmup (object) — {durationMin: int, description: str, targetPace: str, hrZone: int}\n"
+                                        "  warmup (object) — {durationMin: int, description: str, targetPace: str, hrZone: int|list}\n"
                                         "  mainSet (object) — {description: str, hrZone: int, intervals: [{type: str, durationMin: float, distanceKm: float, targetPace: str, hrZone: int, notes: str}]}\n"
-                                        "  cooldown (object) — {durationMin: int, description: str, targetPace: str, hrZone: int}\n"
-                                        "  targetDistanceKm (float) — total target distance\n"
-                                        "  estimatedDurationMin (int) — expected session length\n"
-                                        "To turn a rest day into a workout you MUST include: isRestDay=false, type, title, warmup, mainSet, cooldown, coachMessage."
+                                        "  cooldown (object) — {durationMin: int, description: str, targetPace: str, hrZone: int}"
                                     ),
                                 },
                             },

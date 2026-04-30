@@ -55,7 +55,7 @@ struct MainTabView: View {
             selectedTab = 4
         }
         .onReceive(NotificationCenter.default.publisher(for: .planDidUpdate)) { _ in
-            Task { await trainingVM.load() }
+            Task { await trainingVM.load(preserveWeek: true) }
         }
     }
 

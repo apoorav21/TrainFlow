@@ -17,31 +17,38 @@ final class DynamicTrainingViewModel: ObservableObject {
     @Published var showAllActivity = false
     @Published var selectedActivity: WorkoutActivity?
 
-    // Calendar weeks: each entry is 7 slots Mon(0)…Sun(6), nil = no workout that day
-    // Groups by plan weekNumber (D1–D7) so "Wk 1" in app == "Week 1" on watch.
+    // Calendar weeks: Mon–Sun rows. Slot 0=Mon … 6=Sun.
+    // Groups by actual calendar week so the grid always starts on Monday.
     var calendarWeeks: [[RemoteWorkoutDay?]] {
         guard !workoutDays.isEmpty else { return [] }
-        var weekMap: [Int: [Int: RemoteWorkoutDay]] = [:]
+
+        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
+        var cal = Calendar(identifier: .gregorian)
+        cal.firstWeekday = 2 // Monday
+
+        guard let firstDay = workoutDays.min(by: { $0.scheduledDate < $1.scheduledDate }),
+              let firstDate = fmt.date(from: firstDay.scheduledDate) else { return [] }
+
+        // Monday on or before the plan's first day
+        let wd = cal.component(.weekday, from: firstDate) // 1=Sun, 2=Mon … 7=Sat
+        let daysFromMon = wd == 1 ? 6 : wd - 2          // 0=Mon … 6=Sun
+        guard let firstMonday = cal.date(byAdding: .day, value: -daysFromMon, to: firstDate) else { return [] }
+
+        var weekGroups: [Int: [Int: RemoteWorkoutDay]] = [:]
         for day in workoutDays {
-            weekMap[day.weekNumber, default: [:]][day.dayNumber] = day
+            guard let date = fmt.date(from: day.scheduledDate) else { continue }
+            let diff = cal.dateComponents([.day], from: firstMonday, to: date).day ?? 0
+            guard diff >= 0 else { continue }
+            weekGroups[diff / 7, default: [:]][diff % 7] = day
         }
-        return weekMap.keys.sorted().map { weekNum in
-            let dayMap = weekMap[weekNum] ?? [:]
-            return (1...7).map { dayMap[$0] }
+        return weekGroups.keys.sorted().map { wi in
+            let dayMap = weekGroups[wi] ?? [:]
+            return (0..<7).map { dayMap[$0] }
         }
     }
 
-    // Day-of-week abbreviations starting from plan D1's actual weekday.
-    var planDayHeaders: [String] {
-        let dayNames = ["S","M","T","W","T","F","S"] // Apple: Sun=1…Sat=7, 0-based here
-        guard let first = workoutDays.min(by: { $0.scheduledDate < $1.scheduledDate }) else {
-            return ["M","T","W","T","F","S","S"]
-        }
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-        guard let d = f.date(from: first.scheduledDate) else { return ["M","T","W","T","F","S","S"] }
-        let wd = Calendar.current.component(.weekday, from: d) - 1 // 0-based, 0=Sun
-        return (0..<7).map { dayNames[(wd + $0) % 7] }
-    }
+    // Always Monday-first column headers.
+    var planDayHeaders: [String] { ["M","T","W","T","F","S","S"] }
 
     // Kept for compatibility — used only by todayWorkout / other non-grid code
     var weeks: [[RemoteWorkoutDay]] {
@@ -67,14 +74,14 @@ final class DynamicTrainingViewModel: ObservableObject {
         return workoutDays.first { $0.scheduledDate == todayStr }
     }
 
-    func load() async {
+    func load(preserveWeek: Bool = false) async {
         isLoading = true
         errorMessage = nil
         do {
             plan = try await TrainingService.shared.fetchActivePlan()
             if let p = plan {
                 workoutDays = try await TrainingService.shared.fetchWorkoutDays(planId: p.id)
-                setCurrentWeek()
+                if !preserveWeek { setCurrentWeek() }
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -257,7 +264,7 @@ struct DynamicTrainingView: View {
             .sheet(item: $vm.logDay) { day in
                 WorkoutLogView(day: day, planId: vm.plan?.id ?? "") { feedback in
                     vm.markComplete(day)
-                    Task { await vm.load() }
+                    Task { await vm.load(preserveWeek: true) }
                 }
             }
             .sheet(isPresented: $vm.showAdaptChat) {
@@ -683,7 +690,7 @@ struct WorkoutDayRemoteDetailView: View {
                 guard let report = note.userInfo?["report"] as? WorkoutReport,
                       report.planWeekDay == liveDay.planWeekDay else { return }
                 withAnimation { isGeneratingReport = false; aiReport = report.aiReport }
-                Task { await vm.load() }
+                Task { await vm.load(preserveWeek: true) }
             }
         }
     }
@@ -908,7 +915,7 @@ struct WorkoutDayRemoteDetailView: View {
         .sheet(isPresented: $showLogView) {
             WorkoutLogView(day: day, planId: vm.plan?.id ?? "") { _ in
                 vm.markComplete(day)
-                Task { await vm.load() }
+                Task { await vm.load(preserveWeek: true) }
                 dismiss()
             }
         }

@@ -219,14 +219,22 @@ def execute_tool(tool_name: str, tool_input: dict, user_id: str) -> dict:
 
         now = datetime.now(timezone.utc).isoformat()
         applied = 0
-
         skipped = 0
+
+        # Fields that only belong on workout days (not rest days)
+        _workout_only_fields = (
+            'warmup', 'mainSet', 'cooldown', 'distance', 'duration',
+            'targetPace', 'targetHRZone', 'targetDistanceKm', 'estimatedDurationMin',
+        )
+
         for change in changes:
             day_sk = change.get('planWeekDay')
             updates = change.get('updates', {})
             if not day_sk:
                 continue
+
             # Never modify already-completed workout days
+            existing = None
             try:
                 existing = db.get_workout_day(user_id, day_sk)
                 if existing and existing.get('isCompleted'):
@@ -235,9 +243,27 @@ def execute_tool(tool_name: str, tool_input: dict, user_id: str) -> dict:
                     continue
             except Exception:
                 pass
-            updates['updatedAt'] = now
+
+            # Full replacement when: isRestDay changes, OR title+type both supplied
+            # (indicates a full workout swap, not a partial field update)
+            is_full_swap = ('isRestDay' in updates) or (
+                'title' in updates and 'type' in updates
+            )
+
             try:
-                db.update_workout_day(user_id, day_sk, updates)
+                if is_full_swap:
+                    # Fetch existing if not already fetched, to preserve key fields
+                    if existing is None:
+                        existing = db.get_workout_day(user_id, day_sk) or {}
+                    merged = {**existing, **updates, 'updatedAt': now}
+                    # When converting to rest day, strip all workout-only fields
+                    if updates.get('isRestDay') is True:
+                        for field in _workout_only_fields:
+                            merged.pop(field, None)
+                    db.put_workout_day(merged)
+                else:
+                    updates['updatedAt'] = now
+                    db.update_workout_day(user_id, day_sk, updates)
                 applied += 1
             except Exception as e:
                 print(f'[tool_executor] adapt_training_plan failed for {day_sk}: {e}')
